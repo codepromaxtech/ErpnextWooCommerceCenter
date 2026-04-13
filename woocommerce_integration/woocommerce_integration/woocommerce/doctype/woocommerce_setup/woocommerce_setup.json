@@ -1,0 +1,324 @@
+{
+ "actions": [],
+ "creation": "2024-02-29 14:47:55.912826",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enable_sync",
+  "column_break_xlgy3",
+  "verify_ssl",
+  "access_section",
+  "url",
+  "consumer_key",
+  "column_break_5tmko",
+  "consumer_secret",
+  "webhooks_section",
+  "webhook_secret",
+  "webhook_endpoints",
+  "general_section",
+  "default_user",
+  "default_uom",
+  "column_break_qmjyq",
+  "default_company",
+  "sales_order_series",
+  "delivery_after",
+  "default_warehouse",
+  "taxes_section",
+  "tax_account",
+  "column_break_i90um",
+  "shipping_tax_account",
+  "stock_sync_tab",
+  "enable_stock_sync",
+  "last_stock_sync",
+  "warehouse",
+  "column_break_ah4th",
+  "stock_sync_interval",
+  "stock_server_script",
+  "order_sync_tab",
+  "enable_order_sync",
+  "order_per_page",
+  "last_order_sync",
+  "column_break_zht3a",
+  "order_sync_frequency",
+  "order_sync_interval",
+  "order_server_script",
+  "filters_section",
+  "order_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "consumer_key",
+   "fieldtype": "Data",
+   "label": "Consumer Key",
+   "reqd": 1
+  },
+  {
+   "fieldname": "consumer_secret",
+   "fieldtype": "Password",
+   "label": "Consumer Secret",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_5tmko",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "webhook_secret",
+   "fieldtype": "Data",
+   "label": "Webhook Secret",
+   "read_only": 1
+  },
+  {
+   "depends_on": "enable_sync",
+   "fieldname": "general_section",
+   "fieldtype": "Section Break",
+   "label": "General"
+  },
+  {
+   "description": "The user that will be used to create Customers, Items and Sales Orders. This user should have the relevant permissions.",
+   "fieldname": "default_user",
+   "fieldtype": "Link",
+   "label": "Default User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_qmjyq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_company",
+   "fieldtype": "Link",
+   "label": "Default Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sales_order_series",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Sales Order Series",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_sync",
+   "fieldtype": "Check",
+   "label": "Enable Sync"
+  },
+  {
+   "depends_on": "enable_sync",
+   "fieldname": "access_section",
+   "fieldtype": "Section Break",
+   "label": "Access"
+  },
+  {
+   "description": "Defaults to \"Nos\"",
+   "fieldname": "default_uom",
+   "fieldtype": "Link",
+   "label": "Default UOM",
+   "options": "UOM",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "enable_sync",
+   "fieldname": "webhooks_section",
+   "fieldtype": "Section Break",
+   "label": "Webhooks"
+  },
+  {
+   "fieldname": "webhook_endpoints",
+   "fieldtype": "Small Text",
+   "label": "Webhook Endpoints",
+   "read_only": 1
+  },
+  {
+   "description": "Used to set the Delivery Date x days after the Order Date in the Sales Order. Defaults to 7",
+   "fieldname": "delivery_after",
+   "fieldtype": "Int",
+   "label": "Delivery After (days)"
+  },
+  {
+   "fieldname": "default_warehouse",
+   "fieldtype": "Link",
+   "label": "Default Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "taxes_section",
+   "fieldtype": "Section Break",
+   "label": "Taxes"
+  },
+  {
+   "fieldname": "tax_account",
+   "fieldtype": "Link",
+   "label": "Tax Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_i90um",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "shipping_tax_account",
+   "fieldtype": "Link",
+   "label": "Shipping Tax Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "description": "Eg.: https://abc.com",
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "WooCommerce Webshop URL",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_xlgy3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_stock_sync",
+   "fieldtype": "Check",
+   "label": "Enable Stock Sync"
+  },
+  {
+   "fieldname": "stock_sync_tab",
+   "fieldtype": "Tab Break",
+   "label": "Stock Sync"
+  },
+  {
+   "fieldname": "column_break_ah4th",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "enable_stock_sync",
+   "description": "Stock is synced from this warehouse to WooCommerce",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "mandatory_depends_on": "enable_stock_sync",
+   "options": "Warehouse"
+  },
+  {
+   "default": "0",
+   "fieldname": "verify_ssl",
+   "fieldtype": "Check",
+   "label": "Verify SSL"
+  },
+  {
+   "depends_on": "enable_stock_sync",
+   "fieldname": "last_stock_sync",
+   "fieldtype": "Datetime",
+   "label": "Last Stock Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stock_server_script",
+   "fieldtype": "Link",
+   "label": "Stock Server Script",
+   "options": "Server Script",
+   "read_only": 1
+  },
+  {
+   "fieldname": "order_sync_tab",
+   "fieldtype": "Tab Break",
+   "label": "Order Sync"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_order_sync",
+   "fieldtype": "Check",
+   "label": "Enable Order Sync"
+  },
+  {
+   "depends_on": "enable_order_sync",
+   "fieldname": "last_order_sync",
+   "fieldtype": "Datetime",
+   "label": "Last Order Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_zht3a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.enable_order_sync && doc.order_sync_frequency==\"Minutes\"\n",
+   "fieldname": "order_sync_interval",
+   "fieldtype": "Int",
+   "label": "Order Sync Interval (Mins)",
+   "mandatory_depends_on": "eval:doc.enable_order_sync && doc.order_sync_frequency==\"Minutes\"\n"
+  },
+  {
+   "depends_on": "enable_order_sync",
+   "fieldname": "order_server_script",
+   "fieldtype": "Link",
+   "label": "Order Sync Server Script",
+   "options": "Server Script",
+   "read_only": 1
+  },
+  {
+   "depends_on": "enable_stock_sync",
+   "fieldname": "stock_sync_interval",
+   "fieldtype": "Int",
+   "label": "Stock Sync Interval (Mins)",
+   "mandatory_depends_on": "enable_stock_sync"
+  },
+  {
+   "depends_on": "enable_order_sync",
+   "fieldname": "order_sync_frequency",
+   "fieldtype": "Select",
+   "label": "Order Sync Frequency",
+   "mandatory_depends_on": "enable_order_sync",
+   "options": "Minutes\nHourly\nDaily"
+  },
+  {
+   "depends_on": "enable_order_sync",
+   "description": "Defaults to 10",
+   "fieldname": "order_per_page",
+   "fieldtype": "Int",
+   "label": "Orders Per Page"
+  },
+  {
+   "fieldname": "filters_section",
+   "fieldtype": "Section Break",
+   "label": "Filters"
+  },
+  {
+   "fieldname": "order_status",
+   "fieldtype": "Table",
+   "label": "Order status",
+   "options": "WooCommerce Order Status"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-04-22 16:53:51.604167",
+ "modified_by": "Administrator",
+ "module": "WooCommerce",
+ "name": "WooCommerce Setup",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
