@@ -118,14 +118,46 @@ class WooCommerceResource(Document):
 		if not self.current_wc_api:
 			log_and_raise_error(error_text=f"No API found for domain '{wc_server_domain}'")
 
-		try:
-			record = self.current_wc_api.api.get(f"{self.resource}/{record_id}").json()
-		except Exception:
-			log_and_raise_error(
-				error_text=f"load_from_db failed (WooCommerce {self.resource} #{record_id})\n\n{frappe.get_traceback()}"
-			)
+		record = None
 
-		if "id" not in record:
+		# Try loading as a top-level resource first
+		try:
+			response = self.current_wc_api.api.get(f"{self.resource}/{record_id}")
+			if response.status_code == 200:
+				record = response.json()
+		except Exception:
+			pass
+
+		# If top-level load failed or returned a variation with parent_id,
+		# and this resource supports child_resource, try loading as a child
+		if record and record.get("parent_id") and getattr(self, "child_resource", None):
+			parent_id = record["parent_id"]
+			try:
+				child_response = self.current_wc_api.api.get(
+					f"{self.resource}/{parent_id}/{self.child_resource}/{record_id}"
+				)
+				if child_response.status_code == 200:
+					record = child_response.json()
+					record["parent_id"] = parent_id
+			except Exception:
+				pass  # Keep the top-level record if child endpoint fails
+
+		# If top-level load failed entirely, try as a child resource
+		# by looking up parent_id from ERPNext Item
+		if not record or "id" not in record:
+			parent_id = self._get_parent_id_from_erpnext(wc_server_domain, record_id)
+			if parent_id and getattr(self, "child_resource", None):
+				try:
+					child_response = self.current_wc_api.api.get(
+						f"{self.resource}/{parent_id}/{self.child_resource}/{record_id}"
+					)
+					if child_response.status_code == 200:
+						record = child_response.json()
+						record["parent_id"] = parent_id
+				except Exception:
+					pass
+
+		if not record or "id" not in record:
 			log_and_raise_error(
 				error_text=f"load_from_db failed — no 'id' in response for {self.resource} #{record_id}:\n{record}"
 			)
@@ -133,6 +165,37 @@ class WooCommerceResource(Document):
 		record = self.pre_init_document(record, woocommerce_server_url=self.current_wc_api.woocommerce_server_url)
 		record = self.after_load_from_db(record)
 		self.call_super_init(record)
+
+	def _get_parent_id_from_erpnext(self, wc_server_domain, record_id):
+		"""Look up the parent WooCommerce product ID from ERPNext for a variation."""
+		try:
+			iws = frappe.qb.DocType("Item WooCommerce Server")
+			itm = frappe.qb.DocType("Item")
+
+			# Find the ERPNext Item for this WC product ID
+			item_data = (
+				frappe.qb.from_(iws)
+				.join(itm).on(iws.parent == itm.name)
+				.where(iws.woocommerce_id == str(record_id))
+				.where(iws.woocommerce_server == wc_server_domain)
+				.select(itm.variant_of)
+				.limit(1)
+			).run(as_dict=True)
+
+			if item_data and item_data[0].variant_of:
+				# Get the parent item's WC product ID
+				parent_wc = (
+					frappe.qb.from_(iws)
+					.where(iws.parent == item_data[0].variant_of)
+					.where(iws.woocommerce_server == wc_server_domain)
+					.select(iws.woocommerce_id)
+					.limit(1)
+				).run(as_dict=True)
+				if parent_wc:
+					return parent_wc[0].woocommerce_id
+		except Exception:
+			pass
+		return None
 
 	def call_super_init(self, record: dict):
 		super(Document, self).__init__(record)
