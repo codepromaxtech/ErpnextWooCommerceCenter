@@ -1,5 +1,5 @@
 // WooCommerce Center — WooCommerce Server Form JS
-// Dynamic field options for Item/SO field mapping, webhook config dialog, WC status list.
+// Dynamic field options for Item/SO field mapping, webhook delivery URLs.
 // Developer: CodeProMax Tech | Md. Al-Amin | codepromaxtech@gmail.com
 
 frappe.ui.form.on("WooCommerce Server", {
@@ -10,143 +10,112 @@ frappe.ui.form.on("WooCommerce Server", {
         };
 
         // Populate Item field mapping options
-        frappe.call({
-            method: "get_item_docfields",
-            doc: frm.doc,
-            args: { doctype: "Item" },
-            callback: function (r) {
-                r.message.sort((a, b) =>
-                    (a.label || "").localeCompare(b.label || ""),
-                );
-                const options = r.message
-                    .map((f) => `${f.fieldname} | ${f.label}`)
-                    .join("\n");
-                frm.fields_dict.item_field_map.grid.update_docfield_property(
-                    "erpnext_field_name",
-                    "options",
-                    options,
-                );
-            },
-        });
+        if (!frm.is_new()) {
+            frappe.call({
+                method: "get_item_docfields",
+                doc: frm.doc,
+                args: { doctype: "Item" },
+                callback: function (r) {
+                    if (!r.message) return;
+                    r.message.sort((a, b) =>
+                        (a.label || "").localeCompare(b.label || ""),
+                    );
+                    const options = r.message
+                        .map((f) => `${f.fieldname} | ${f.label}`)
+                        .join("\n");
+                    frm.fields_dict.item_field_map.grid.update_docfield_property(
+                        "erpnext_field_name",
+                        "options",
+                        options,
+                    );
+                },
+            });
 
-        // Populate Sales Order Item field mapping options
-        frappe.call({
-            method: "get_item_docfields",
-            doc: frm.doc,
-            args: { doctype: "Sales Order Item" },
-            callback: function (r) {
-                r.message.sort((a, b) =>
-                    (a.label || "").localeCompare(b.label || ""),
-                );
-                const options = r.message
-                    .map((f) => `${f.fieldname} | ${f.label}`)
-                    .join("\n");
-                frm.fields_dict.order_line_item_field_map.grid.update_docfield_property(
-                    "erpnext_field_name",
-                    "options",
-                    options,
-                );
-            },
-        });
-
-        // Populate WooCommerce Order Status options
-        if (
-            frm.doc.enable_so_status_sync &&
-            !frm.fields_dict.sales_order_status_map.grid.get_docfield(
-                "woocommerce_sales_order_status",
-            ).options
-        ) {
-            frm.trigger("get_woocommerce_order_status_list");
+            // Populate Sales Order Item field mapping options
+            frappe.call({
+                method: "get_item_docfields",
+                doc: frm.doc,
+                args: { doctype: "Sales Order Item" },
+                callback: function (r) {
+                    if (!r.message) return;
+                    r.message.sort((a, b) =>
+                        (a.label || "").localeCompare(b.label || ""),
+                    );
+                    const options = r.message
+                        .map((f) => `${f.fieldname} | ${f.label}`)
+                        .join("\n");
+                    frm.fields_dict.order_line_item_field_map.grid.update_docfield_property(
+                        "erpnext_field_name",
+                        "options",
+                        options,
+                    );
+                },
+            });
         }
 
-        // Experimental warning for SO Status Sync
-        let warningHTML = `
-      <div class="form-message red">
-        <div>
-          ${__("This setting is Experimental. Monitor your Error Log after enabling this setting")}
-        </div>
-      </div>`;
-        frm.set_df_property(
-            "enable_so_status_sync_warning_html",
-            "options",
-            warningHTML,
-        );
-        frm.refresh_field("enable_so_status_sync_warning_html");
-    },
-
-    enable_so_status_sync: function (frm) {
-        if (
-            frm.doc.enable_so_status_sync &&
-            !frm.fields_dict.sales_order_status_map.grid.get_docfield(
-                "woocommerce_sales_order_status",
-            ).options
-        ) {
-            frm.trigger("get_woocommerce_order_status_list");
-        }
-    },
-
-    get_woocommerce_order_status_list: function (frm) {
-        frappe.call({
-            method: "get_woocommerce_order_status_list",
-            doc: frm.doc,
-            callback: function (r) {
-                const options = r.message.join("\n");
-                frm.fields_dict.sales_order_status_map.grid.update_docfield_property(
-                    "woocommerce_sales_order_status",
-                    "options",
-                    options,
-                );
-            },
-        });
-    },
-
-    view_webhook_config: function (frm) {
-        let d = new frappe.ui.Dialog({
-            title: __("WooCommerce Webhook Settings"),
-            fields: [
-                {
-                    label: __("Status"),
-                    fieldname: "status",
-                    fieldtype: "Data",
-                    default: "Active",
-                    read_only: 1,
-                },
-                {
-                    label: __("Topic"),
-                    fieldname: "topic",
-                    fieldtype: "Data",
-                    default: "Order created",
-                    read_only: 1,
-                },
-                {
-                    label: __("Delivery URL"),
-                    fieldname: "url",
-                    fieldtype: "Data",
-                    default:
-                        "<site url here>/api/method/woocommerce_center.woocommerce_endpoint.create_order",
-                    read_only: 1,
-                },
-                {
-                    label: __("Secret"),
-                    fieldname: "secret",
-                    fieldtype: "Code",
-                    default: frm.doc.webhook_secret,
-                    read_only: 1,
-                },
-                {
-                    label: __("API Version"),
-                    fieldname: "api_version",
-                    fieldtype: "Data",
-                    default: "WP REST API Integration v3",
-                    read_only: 1,
-                },
-            ],
-            size: "large",
-            primary_action_label: __("OK"),
-            primary_action() {
-                d.hide();
-            },
-        });
-        d.show();
+        // Render webhook delivery URLs
+        render_webhook_delivery_urls(frm);
     },
 });
+
+
+function render_webhook_delivery_urls(frm) {
+    const wrapper = frm.fields_dict.webhook_delivery_urls;
+    if (!wrapper || !wrapper.$wrapper) return;
+
+    if (frm.is_new()) {
+        wrapper.$wrapper.html(
+            '<p class="text-muted" style="margin-top:10px">Save the document to see webhook delivery URLs.</p>'
+        );
+        return;
+    }
+
+    const base = window.location.origin;
+    const endpoints = [
+        { event: "order.created", fn: "create_order" },
+        { event: "order.updated", fn: "update_order" },
+        { event: "order.deleted", fn: "delete_order" },
+        { event: "product.updated", fn: "update_product" },
+    ];
+
+    let rows = endpoints
+        .map(
+            (ep) =>
+                `<tr>
+            <td><code>${ep.event}</code></td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <code class="flex-grow-1" style="word-break:break-all">${base}/api/method/woocommerce_center.woocommerce_endpoint.${ep.fn}</code>
+                    <button class="btn btn-xs btn-default ml-2 copy-url-btn"
+                        data-url="${base}/api/method/woocommerce_center.woocommerce_endpoint.${ep.fn}"
+                        title="Copy URL">
+                        📋
+                    </button>
+                </div>
+            </td>
+        </tr>`
+        )
+        .join("");
+
+    let html = `
+        <div class="webhook-urls-wrapper" style="margin-top:10px">
+            <p class="text-muted" style="margin-bottom:8px">
+                Use these URLs as <strong>Delivery URL</strong> when creating webhooks in
+                WooCommerce → Settings → Advanced → Webhooks.
+                Set the <strong>Secret</strong> to the value of the "Webhook Secret" field above.
+            </p>
+            <table class="table table-bordered table-sm" style="font-size:12px">
+                <thead><tr><th style="width:140px">WC Event</th><th>Delivery URL</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+
+    wrapper.$wrapper.html(html);
+
+    // Copy-to-clipboard handler
+    wrapper.$wrapper.find(".copy-url-btn").on("click", function () {
+        const url = $(this).data("url");
+        frappe.utils.copy_to_clipboard(url);
+    });
+}
+
