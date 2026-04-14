@@ -22,6 +22,6 @@ class SynchroniseWooCommerce:
 
 	@staticmethod
 	def get_wc_servers():
-		"""Fetch all WooCommerce Server documents."""
-		wc_servers = frappe.get_all("WooCommerce Server")
+		"""Fetch all enabled WooCommerce Server documents."""
+		wc_servers = frappe.get_all("WooCommerce Server", filters={"enable_sync": 1})
 		return [frappe.get_doc("WooCommerce Server", server.name) for server in wc_servers]
