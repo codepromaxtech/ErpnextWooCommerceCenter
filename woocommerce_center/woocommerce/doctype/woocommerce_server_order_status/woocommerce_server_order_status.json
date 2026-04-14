@@ -1,13 +1,38 @@
 {
- "actions": [], "creation": "2024-01-01 00:00:00.000000",
- "doctype": "DocType", "editable_grid": 1, "engine": "InnoDB",
- "field_order": ["wc_order_status", "erp_order_status"],
- "fields": [
-  {"fieldname": "wc_order_status", "fieldtype": "Data", "label": "WooCommerce Order Status", "reqd": 1, "in_list_view": 1},
-  {"fieldname": "erp_order_status", "fieldtype": "Data", "label": "ERPNext Status Equivalent", "in_list_view": 1}
+ "actions": [],
+ "creation": "2024-01-01 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "wc_order_status",
+  "erp_order_status"
  ],
- "istable": 1, "links": [], "modified": "2024-01-01 00:00:00.000000",
- "modified_by": "Administrator", "name": "WooCommerce Server Order Status",
- "owner": "Administrator", "permissions": [], "sort_field": "modified",
- "sort_order": "DESC", "states": [], "track_changes": 0
+ "fields": [
+  {
+   "fieldname": "wc_order_status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "WooCommerce Order Status",
+   "reqd": 1
+  },
+  {
+   "fieldname": "erp_order_status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "ERPNext Status Equivalent"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2024-01-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WooCommerce",
+ "name": "WooCommerce Server Order Status",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
 }
