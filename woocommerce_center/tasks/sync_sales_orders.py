@@ -13,7 +13,7 @@ from erpnext.selling.doctype.sales_order.sales_order import SalesOrder
 from erpnext.selling.doctype.sales_order_item.sales_order_item import SalesOrderItem
 from frappe import _
 from frappe.utils import get_datetime
-from frappe.utils.data import cstr, now
+from frappe.utils.data import add_to_date, cstr, now
 from jsonpath_ng.ext import parse
 
 from woocommerce_center.exceptions import SyncDisabledError, WooCommerceOrderNotFoundError
@@ -128,14 +128,8 @@ def sync_woocommerce_orders_modified_since(date_time_from=None):
 	wc_settings = frappe.get_doc("WooCommerce Integration Settings")
 
 	if not date_time_from:
-		date_time_from = wc_settings.wc_last_sync_date
-
-	if not date_time_from:
-		error_text = _(
-			"'Last Synchronisation Date' field on 'WooCommerce Integration Settings' is missing"
-		)
-		frappe.log_error("WooCommerce Orders Sync Task Error", error_text)
-		raise ValueError(error_text)
+		# First sync — default to last 30 days
+		date_time_from = add_to_date(now(), days=-30)
 
 	wc_orders = get_list_of_wc_orders(date_time_from=date_time_from)
 	wc_orders += get_list_of_wc_orders(date_time_from=date_time_from, status="trash")
