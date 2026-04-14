@@ -616,7 +616,7 @@ def get_item_price_rate(item: ERPNextItemToSync):
 	if wc_server.enable_price_list_sync:
 		item_prices = frappe.get_all(
 			"Item Price",
-			filters={"item_code": item.item.item_name, "price_list": wc_server.price_list},
+			filters={"item_code": item.item.item_code, "price_list": wc_server.price_list},
 			fields=["price_list_rate", "valid_upto"],
 		)
 		return next(

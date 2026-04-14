@@ -112,6 +112,8 @@ fixtures = [
 					"Customer-woocommerce_is_guest",
 					# Address fields
 					"Address-woocommerce_identifier",
+					# Contact fields
+					"Contact-woocommerce_identifier",
 					# Sales Order fields
 					"Sales Order-woocommerce_id",
 					"Sales Order-woocommerce_server",

@@ -71,7 +71,7 @@ class WooCommerceOrder(WooCommerceResource):
 				api=APIWithRequestLogging(
 					url=server.woocommerce_server_url,
 					consumer_key=server.api_consumer_key,
-					consumer_secret=server.api_consumer_secret,
+					consumer_secret=server.get_password("api_consumer_secret"),
 					version="wc/v3",
 					timeout=40,
 					verify_ssl=server.verify_ssl,
