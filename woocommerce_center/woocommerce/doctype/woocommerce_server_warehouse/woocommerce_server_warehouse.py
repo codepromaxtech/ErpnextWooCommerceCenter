@@ -1,6 +1,6 @@
-"""WooCommerce Center — WoocommerceServerWarehouse controller."""
+"""WooCommerce Center — WooCommerceServerWarehouse controller."""
 import frappe
 from frappe.model.document import Document
 
-class WoocommerceServerWarehouse(Document):
+class WooCommerceServerWarehouse(Document):
 	pass
