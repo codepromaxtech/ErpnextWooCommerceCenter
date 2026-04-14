@@ -47,6 +47,7 @@ def update_stock_levels_for_woocommerce_item(doc, method):
 		)
 
 
+@frappe.whitelist()
 def update_stock_levels_for_all_enabled_items_in_background():
 	"""
 	Daily scheduler task: get all enabled ERPNext Items and post stock updates to WooCommerce.

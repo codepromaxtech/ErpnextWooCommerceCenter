@@ -14,6 +14,7 @@
         "col_break_conn",
         "enable_sync",
         "verify_ssl",
+        "erpnext_site_url",
         "webhook_secret",
         "webhook_delivery_urls",
         "item_sync_section",
@@ -118,6 +119,12 @@
             "fieldname": "verify_ssl",
             "fieldtype": "Check",
             "label": "Verify SSL"
+        },
+        {
+            "description": "Public URL of your ERPNext site (e.g. https://erpnext.aranya.com.bd). Used for webhook delivery URLs. Leave blank to auto-detect from browser.",
+            "fieldname": "erpnext_site_url",
+            "fieldtype": "Data",
+            "label": "ERPNext Site URL"
         },
         {
             "description": "Used to verify incoming WooCommerce webhooks (HMAC-SHA256)",
