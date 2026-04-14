@@ -844,7 +844,7 @@ def get_list_of_wc_orders(
 	wc_orders = []
 
 	wc_settings = frappe.get_cached_doc("WooCommerce Integration Settings")
-	minimum_creation_date = wc_settings.minimum_creation_date
+	minimum_creation_date = getattr(wc_settings, "minimum_creation_date", None)
 
 	if date_time_from:
 		filters.append(["WooCommerce Order", "date_modified", ">", date_time_from])
