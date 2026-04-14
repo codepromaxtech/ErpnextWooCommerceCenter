@@ -13,7 +13,7 @@ import frappe
 from erpnext.stock.doctype.item.item import Item
 from frappe import ValidationError, _, _dict
 from frappe.query_builder import Criterion
-from frappe.utils import get_datetime, now
+from frappe.utils import add_to_date, get_datetime, now
 from jsonpath_ng.ext import parse
 
 from woocommerce_center.exceptions import SyncDisabledError
@@ -118,14 +118,8 @@ def sync_woocommerce_products_modified_since(date_time_from=None):
 	wc_settings = frappe.get_doc("WooCommerce Integration Settings")
 
 	if not date_time_from:
-		date_time_from = wc_settings.wc_last_sync_date_items
-
-	if not date_time_from:
-		error_text = _(
-			"'Last Items Synchronisation Date' field on 'WooCommerce Integration Settings' is missing"
-		)
-		frappe.log_error("WooCommerce Items Sync Task Error", error_text)
-		raise ValueError(error_text)
+		# First sync — default to last 30 days
+		date_time_from = add_to_date(now(), days=-30)
 
 	wc_products = get_list_of_wc_products(date_time_from=date_time_from)
 	for wc_product in wc_products:
