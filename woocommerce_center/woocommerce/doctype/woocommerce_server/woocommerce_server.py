@@ -19,7 +19,7 @@ from woocommerce_center.woocommerce.doctype.woocommerce_order.woocommerce_order 
 )
 from woocommerce_center.woocommerce.woocommerce_api import parse_domain_from_url
 
-verify_ssl = not frappe._dev_server
+
 
 
 class WooCommerceServer(Document):
@@ -89,7 +89,7 @@ class WooCommerceServer(Document):
 		wc_api = API(
 			url=self.woocommerce_server_url,
 			consumer_key=self.api_consumer_key,
-			consumer_secret=self.api_consumer_secret,
+			consumer_secret=self.get_password("api_consumer_secret"),
 			version="wc/v3",
 			timeout=40,
 			verify_ssl=self.verify_ssl,
