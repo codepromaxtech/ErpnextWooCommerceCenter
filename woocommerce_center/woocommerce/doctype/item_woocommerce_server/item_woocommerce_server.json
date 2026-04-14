@@ -4,18 +4,52 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": ["woocommerce_server", "woocommerce_id", "enabled", "col_break1", "woocommerce_last_sync_hash"],
+ "field_order": [
+  "woocommerce_server",
+  "woocommerce_id",
+  "enabled",
+  "col_break1",
+  "woocommerce_last_sync_hash"
+ ],
  "fields": [
-  {"fieldname": "woocommerce_server", "fieldtype": "Link", "label": "WooCommerce Server", "options": "WooCommerce Server", "reqd": 1, "in_list_view": 1},
-  {"fieldname": "woocommerce_id", "fieldtype": "Data", "label": "WooCommerce Product ID", "in_list_view": 1},
-  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enabled", "default": "1", "in_list_view": 1},
-  {"fieldname": "col_break1", "fieldtype": "Column Break"},
-  {"fieldname": "woocommerce_last_sync_hash", "fieldtype": "Data", "label": "Last Sync Hash", "read_only": 1, "hidden": 1}
+  {
+   "fieldname": "woocommerce_server",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "WooCommerce Server",
+   "options": "WooCommerce Server",
+   "reqd": 1
+  },
+  {
+   "fieldname": "woocommerce_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "WooCommerce Product ID"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "col_break1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "woocommerce_last_sync_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Last Sync Hash",
+   "read_only": 1
+  }
  ],
  "istable": 1,
  "links": [],
  "modified": "2024-01-01 00:00:00.000000",
  "modified_by": "Administrator",
+ "module": "WooCommerce",
  "name": "Item WooCommerce Server",
  "owner": "Administrator",
  "permissions": [],
