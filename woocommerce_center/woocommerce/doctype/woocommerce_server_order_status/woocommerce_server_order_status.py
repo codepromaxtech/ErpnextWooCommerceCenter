@@ -1,6 +1,6 @@
-"""WooCommerce Center — WoocommerceServerOrderStatus controller."""
+"""WooCommerce Center — WooCommerceServerOrderStatus controller."""
 import frappe
 from frappe.model.document import Document
 
-class WoocommerceServerOrderStatus(Document):
+class WooCommerceServerOrderStatus(Document):
 	pass

@@ -1,6 +1,6 @@
-"""WooCommerce Center — WoocommerceRequestLog controller."""
+"""WooCommerce Center — WooCommerceRequestLog controller."""
 import frappe
 from frappe.model.document import Document
 
-class WoocommerceRequestLog(Document):
+class WooCommerceRequestLog(Document):
 	pass

@@ -1,6 +1,6 @@
-"""WooCommerce Center — WoocommerceServerShippingRule controller."""
+"""WooCommerce Center — WooCommerceServerShippingRule controller."""
 import frappe
 from frappe.model.document import Document
 
-class WoocommerceServerShippingRule(Document):
+class WooCommerceServerShippingRule(Document):
 	pass
