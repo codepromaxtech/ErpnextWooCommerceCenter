@@ -32,7 +32,7 @@ class WooCommerceServer(Document):
 		if not all([result.scheme, result.netloc]):
 			frappe.throw(_("Please enter a valid WooCommerce Server URL"))
 
-		if self.enable_sync and self.wc_plugin_advanced_shipment_tracking:
+		if self.enable_sync and getattr(self, "wc_plugin_advanced_shipment_tracking", None):
 			self.get_shipment_providers()
 
 		if not self.webhook_secret:
@@ -44,10 +44,11 @@ class WooCommerceServer(Document):
 
 	def validate_so_status_map(self):
 		"""Validate Sales Order Status Map for unique mappings."""
-		erpnext_so_statuses = [m.erpnext_sales_order_status for m in self.sales_order_status_map]
+		status_map = getattr(self, "sales_order_status_map", None) or []
+		erpnext_so_statuses = [m.erpnext_sales_order_status for m in status_map]
 		if len(erpnext_so_statuses) != len(set(erpnext_so_statuses)):
 			frappe.throw(_("Duplicate ERPNext Sales Order Statuses found in Sales Order Status Map"))
-		wc_so_statuses = [m.woocommerce_sales_order_status for m in self.sales_order_status_map]
+		wc_so_statuses = [m.woocommerce_sales_order_status for m in status_map]
 		if len(wc_so_statuses) != len(set(wc_so_statuses)):
 			frappe.throw(_("Duplicate WooCommerce Sales Order Statuses found in Sales Order Status Map"))
 
@@ -98,7 +99,8 @@ class WooCommerceServer(Document):
 			all_providers = wc_api.get("orders/1/shipment-trackings/providers").json()
 			if all_providers:
 				provider_names = [provider for country in all_providers for provider in all_providers[country]]
-				self.wc_ast_shipment_providers = "\n".join(provider_names)
+				if hasattr(self, "wc_ast_shipment_providers"):
+					self.wc_ast_shipment_providers = "\n".join(provider_names)
 		except Exception:
 			frappe.log_error("WooCommerce Error", "Failed to fetch shipment providers")
 
