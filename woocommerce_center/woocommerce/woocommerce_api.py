@@ -21,7 +21,6 @@ from woocommerce_center.tasks.utils import APIWithRequestLogging
 # Delimiter used to encode "server_domain~record_id" as a Frappe document name
 WC_RESOURCE_DELIMITER = "~"
 
-verify_ssl = not frappe._dev_server
 
 if frappe._dev_server:
 	import urllib3
@@ -75,7 +74,7 @@ class WooCommerceResource(Document):
 					consumer_secret=server.get_password("api_consumer_secret"),
 					version="wc/v3",
 					timeout=40,
-					verify_ssl=verify_ssl,
+					verify_ssl=server.verify_ssl,
 				),
 				woocommerce_server_url=server.woocommerce_server_url,
 				woocommerce_server=server.name,

@@ -11,7 +11,7 @@ import frappe
 
 from woocommerce_center.tasks.utils import APIWithRequestLogging
 
-verify_ssl = not frappe._dev_server
+
 
 
 def update_stock_levels_for_woocommerce_item(doc, method):
@@ -112,7 +112,7 @@ def update_stock_levels_on_woocommerce_site(item_code: str):
 			consumer_secret=wc_server.get_password("api_consumer_secret"),
 			version="wc/v3",
 			timeout=40,
-			verify_ssl=verify_ssl,
+			verify_ssl=wc_server.verify_ssl,
 		)
 
 		# Sum quantities from configured warehouses, round down (WC API doesn't accept floats)

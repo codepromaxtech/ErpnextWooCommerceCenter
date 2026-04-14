@@ -35,8 +35,8 @@ class WooCommerceServer(Document):
 		if self.enable_sync and self.wc_plugin_advanced_shipment_tracking:
 			self.get_shipment_providers()
 
-		if not self.secret:
-			self.secret = frappe.generate_hash()
+		if not self.webhook_secret:
+			self.webhook_secret = frappe.generate_hash()
 
 		self.validate_so_status_map()
 		self.validate_item_map()
@@ -92,7 +92,7 @@ class WooCommerceServer(Document):
 			consumer_secret=self.api_consumer_secret,
 			version="wc/v3",
 			timeout=40,
-			verify_ssl=verify_ssl,
+			verify_ssl=self.verify_ssl,
 		)
 		try:
 			all_providers = wc_api.get("orders/1/shipment-trackings/providers").json()
