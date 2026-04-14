@@ -1,1 +1,0 @@
-execute:from woocommerce_integration.install import after_install;after_install()

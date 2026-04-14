@@ -1,0 +1,40 @@
+{
+ "actions": [],
+ "autoname": "WC-LOG-.####",
+ "creation": "2024-01-01 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "request_method", "endpoint", "col_break1",
+  "response_status_code", "request_url",
+  "request_section", "request_params", "request_body",
+  "response_section", "response_body"
+ ],
+ "fields": [
+  {"fieldname": "request_method", "fieldtype": "Data", "label": "Method", "in_list_view": 1, "read_only": 1},
+  {"fieldname": "endpoint", "fieldtype": "Data", "label": "Endpoint", "in_list_view": 1, "read_only": 1},
+  {"fieldname": "col_break1", "fieldtype": "Column Break"},
+  {"fieldname": "response_status_code", "fieldtype": "Int", "label": "Status Code", "in_list_view": 1, "read_only": 1},
+  {"fieldname": "request_url", "fieldtype": "Small Text", "label": "Request URL", "read_only": 1},
+  {"fieldname": "request_section", "fieldtype": "Section Break", "label": "Request"},
+  {"fieldname": "request_params", "fieldtype": "Code", "label": "Request Params", "options": "JSON", "read_only": 1},
+  {"fieldname": "request_body", "fieldtype": "Code", "label": "Request Body", "options": "JSON", "read_only": 1},
+  {"fieldname": "response_section", "fieldtype": "Section Break", "label": "Response"},
+  {"fieldname": "response_body", "fieldtype": "Code", "label": "Response Body", "options": "JSON", "read_only": 1}
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2024-01-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "WooCommerce Request Log",
+ "owner": "Administrator",
+ "permissions": [
+  {"read": 1, "role": "System Manager", "export": 1, "report": 1}
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "endpoint",
+ "track_changes": 0
+}

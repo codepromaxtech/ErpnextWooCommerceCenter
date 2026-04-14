@@ -1,0 +1,13 @@
+{
+ "actions": [], "creation": "2024-01-01 00:00:00.000000",
+ "doctype": "DocType", "editable_grid": 1, "engine": "InnoDB",
+ "field_order": ["erpnext_field_name", "woocommerce_field_name"],
+ "fields": [
+  {"fieldname": "erpnext_field_name", "fieldtype": "Data", "label": "ERPNext Field Name", "reqd": 1, "in_list_view": 1, "description": "e.g. description"},
+  {"fieldname": "woocommerce_field_name", "fieldtype": "Data", "label": "WooCommerce Field (JSONPath)", "reqd": 1, "in_list_view": 1, "description": "JSONPath e.g. description or meta_data[?key='custom'].value"}
+ ],
+ "istable": 1, "links": [], "modified": "2024-01-01 00:00:00.000000",
+ "modified_by": "Administrator", "name": "WooCommerce Server Item Field",
+ "owner": "Administrator", "permissions": [], "sort_field": "modified",
+ "sort_order": "DESC", "states": [], "track_changes": 0
+}

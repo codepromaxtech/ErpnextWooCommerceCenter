@@ -1,0 +1,41 @@
+WooCommerce Order ID,WooCommerce Bestellnummer
+WooCommerce Server,WooCommerce Server
+WooCommerce Status,WooCommerce Status
+WooCommerce Payment Method,WooCommerce Zahlungsmethode
+WooCommerce Payment Entry,WooCommerce Zahlungseintrag
+Shipment Tracking,Sendungsverfolgung
+Last WooCommerce Sync Hash,Letzter WooCommerce Sync-Hash
+Customer Note (WooCommerce),Kundennotiz (WooCommerce)
+Attempted WooCommerce Auto Payment Entry,Versuch der automatischen WooCommerce Zahlung
+WooCommerce Identifier,WooCommerce Kennung
+Is WooCommerce Guest,Ist WooCommerce Gast
+WooCommerce Servers,WooCommerce Server
+Sync this Order with WooCommerce,Diese Bestellung mit WooCommerce synchronisieren
+Open in WooCommerce,In WooCommerce öffnen
+Edit WooCommerce Shipment Trackings,WooCommerce Sendungsverfolgungen bearbeiten
+Sync Order with WooCommerce...,Bestellung mit WooCommerce synchronisieren...
+Sync completed successfully,Synchronisation erfolgreich abgeschlossen
+There was an error processing the request. See Error Log.,Fehler bei der Verarbeitung der Anfrage. Siehe Fehlerprotokoll.
+Updated WooCommerce Order successfully,WooCommerce Bestellung erfolgreich aktualisiert
+Updating Order status on WooCommerce...,Bestellstatus auf WooCommerce wird aktualisiert...
+Retrieved WooCommerce Shipment Trackings,WooCommerce Sendungsverfolgungen abgerufen
+Enter Shipment Tracking details,Sendungsverfolgungsdetails eingeben
+Submit and Sync to WooCommerce,Absenden und mit WooCommerce synchronisieren
+Sync this Item's Stock Levels to WooCommerce,Lagerbestände dieses Artikels mit WooCommerce synchronisieren
+Sync this Item's Price to WooCommerce,Preis dieses Artikels mit WooCommerce synchronisieren
+Sync this Item with WooCommerce,Diesen Artikel mit WooCommerce synchronisieren
+Sync Item Stock with WooCommerce...,Artikelbestand mit WooCommerce synchronisieren...
+Synchronised stock level to WooCommerce for enabled servers,Lagerbestand für aktivierte Server mit WooCommerce synchronisiert
+Sync Item Price with WooCommerce...,Artikelpreis mit WooCommerce synchronisieren...
+Synchronised item price to WooCommerce,Artikelpreis mit WooCommerce synchronisiert
+Sync Item with WooCommerce...,Artikel mit WooCommerce synchronisieren...
+Sync this Order to ERPNext,Diese Bestellung mit ERPNext synchronisieren
+Sync Order with ERPNext...,Bestellung mit ERPNext synchronisieren...
+Sync this Item to ERPNext,Diesen Artikel mit ERPNext synchronisieren
+Sync Product with ERPNext...,Produkt mit ERPNext synchronisieren...
+Please enter a valid WooCommerce Server URL,Bitte geben Sie eine gültige WooCommerce Server URL ein
+Duplicate ERPNext Sales Order Statuses found in Sales Order Status Map,Doppelte ERPNext-Auftragsstatus in der Auftragsstatus-Zuordnung gefunden
+Duplicate WooCommerce Sales Order Statuses found in Sales Order Status Map,Doppelte WooCommerce-Auftragsstatus in der Auftragsstatus-Zuordnung gefunden
+This setting is Experimental. Monitor your Error Log after enabling this setting,Diese Einstellung ist experimentell. Überwachen Sie Ihr Fehlerprotokoll nach dem Aktivieren
+WooCommerce Webhook Settings,WooCommerce Webhook-Einstellungen
+WooCommerce Center Documentation,WooCommerce Center Dokumentation
