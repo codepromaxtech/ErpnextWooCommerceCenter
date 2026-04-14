@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils.caching import redis_cache
+from functools import lru_cache
 from jsonpath_ng.ext import parse
 from woocommerce import API
 
@@ -103,7 +103,7 @@ class WooCommerceServer(Document):
 			frappe.log_error("WooCommerce Error", "Failed to fetch shipment providers")
 
 	@frappe.whitelist()
-	@redis_cache(ttl=600)
+	@lru_cache(maxsize=32)
 	def get_item_docfields(self, doctype: str) -> list[dict]:
 		"""Get DocFields for a doctype, excluding layout fields."""
 		invalid_field_types = [
@@ -123,7 +123,7 @@ class WooCommerceServer(Document):
 		return docfields + custom_fields
 
 	@frappe.whitelist()
-	@redis_cache(ttl=86400)
+	@lru_cache(maxsize=32)
 	def get_woocommerce_order_status_list(self) -> list[str]:
 		"""Retrieve list of WooCommerce Order Statuses."""
 		return list(WC_ORDER_STATUS_MAPPING.keys())
