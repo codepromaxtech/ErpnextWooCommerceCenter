@@ -359,10 +359,7 @@ class SynchroniseItem(SynchroniseWooCommerce):
 
 			wc_product.woocommerce_server = item.item_woocommerce_server.woocommerce_server
 			wc_product.woocommerce_name = item.item.item_name
-
-			# Variable (template) products should NOT have regular_price — only variations should
-			if not item.item.has_variants:
-				wc_product.regular_price = get_item_price_rate(item) or "0"
+			wc_product.regular_price = get_item_price_rate(item) or "0"
 
 			self.set_product_fields(wc_product, item)
 			wc_product.insert()
