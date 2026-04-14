@@ -110,6 +110,7 @@ def run_item_sync(
 	)
 
 
+@frappe.whitelist()
 def sync_woocommerce_products_modified_since(date_time_from=None):
 	"""
 	Hourly scheduler task: get WooCommerce products modified since last sync date.

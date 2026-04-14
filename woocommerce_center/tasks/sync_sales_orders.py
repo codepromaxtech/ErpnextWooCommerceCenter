@@ -122,6 +122,7 @@ def run_sales_order_sync(
 	)
 
 
+@frappe.whitelist()
 def sync_woocommerce_orders_modified_since(date_time_from=None):
 	"""Hourly scheduler task: get WooCommerce orders modified since last sync date."""
 	wc_settings = frappe.get_doc("WooCommerce Integration Settings")
