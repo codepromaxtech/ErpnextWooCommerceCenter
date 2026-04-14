@@ -26,23 +26,25 @@ def _get_server_for_webhook() -> Optional[object]:
 	servers = frappe.get_all(
 		"WooCommerce Server",
 		filters={"enable_sync": 1},
-		fields=["name", "webhook_secret"],
+		fields=["name"],
 	)
 	incoming_sig = frappe.get_request_header("X-Wc-Webhook-Signature", "")
 	payload = frappe.request.data
 
 	for server in servers:
-		if not server.webhook_secret:
+		server_doc = frappe.get_doc("WooCommerce Server", server.name)
+		webhook_secret = server_doc.get_password("webhook_secret", raise_exception=False)
+		if not webhook_secret:
 			continue
 		expected_sig = base64.b64encode(
 			HMAC(
-				server.webhook_secret.encode("utf8"),
+				webhook_secret.encode("utf8"),
 				payload,
 				hashlib.sha256,
 			).digest()
 		).decode("utf8")
 		if incoming_sig == expected_sig:
-			return frappe.get_doc("WooCommerce Server", server.name)
+			return server_doc
 	return None
 
 
