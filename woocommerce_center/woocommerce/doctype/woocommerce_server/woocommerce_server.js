@@ -130,7 +130,7 @@ frappe.ui.form.on("WooCommerce Server", {
                     label: __("Secret"),
                     fieldname: "secret",
                     fieldtype: "Code",
-                    default: frm.doc.secret,
+                    default: frm.doc.webhook_secret,
                     read_only: 1,
                 },
                 {
