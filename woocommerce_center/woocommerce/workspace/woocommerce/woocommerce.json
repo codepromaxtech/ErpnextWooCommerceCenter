@@ -1,0 +1,108 @@
+{
+    "charts": [],
+    "content": "[{\"id\":\"intro\",\"type\":\"onboarding\",\"data\":{\"onboarding_name\":\"\",\"col\":12}},{\"id\":\"shortcuts\",\"type\":\"shortcuts\",\"data\":{\"col\":12}},{\"id\":\"cards\",\"type\":\"card_break\",\"data\":{\"col\":12}},{\"id\":\"settings\",\"type\":\"card_break\",\"data\":{\"col\":12,\"title\":\"Settings\"}}]",
+    "creation": "2024-01-01 00:00:00.000000",
+    "doctype": "Workspace",
+    "for_user": "",
+    "hide_custom": 0,
+    "icon": "shopping-cart",
+    "idx": 0,
+    "is_hidden": 0,
+    "label": "WooCommerce",
+    "links": [
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "icon": "",
+            "is_query_report": 0,
+            "label": "WooCommerce Server",
+            "link_count": 0,
+            "link_to": "WooCommerce Server",
+            "link_type": "DocType",
+            "onboard": 1,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "icon": "",
+            "is_query_report": 0,
+            "label": "WooCommerce Product",
+            "link_count": 0,
+            "link_to": "WooCommerce Product",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "icon": "",
+            "is_query_report": 0,
+            "label": "WooCommerce Order",
+            "link_count": 0,
+            "link_to": "WooCommerce Order",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "icon": "",
+            "is_query_report": 0,
+            "label": "WooCommerce Request Log",
+            "link_count": 0,
+            "link_to": "WooCommerce Request Log",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        },
+        {
+            "dependencies": "",
+            "hidden": 0,
+            "icon": "",
+            "is_query_report": 0,
+            "label": "WooCommerce Integration Settings",
+            "link_count": 0,
+            "link_to": "WooCommerce Integration Settings",
+            "link_type": "DocType",
+            "onboard": 0,
+            "type": "Link"
+        }
+    ],
+    "modified": "2024-01-01 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "WooCommerce",
+    "name": "WooCommerce",
+    "owner": "Administrator",
+    "parent_page": "",
+    "public": 1,
+    "restrict_to_domain": "",
+    "roles": [],
+    "sequence_id": 1,
+    "shortcuts": [
+        {
+            "color": "Purple",
+            "doc_view": "List",
+            "label": "WooCommerce Server",
+            "link_to": "WooCommerce Server",
+            "type": "DocType"
+        },
+        {
+            "color": "Blue",
+            "doc_view": "List",
+            "label": "WooCommerce Product",
+            "link_to": "WooCommerce Product",
+            "type": "DocType"
+        },
+        {
+            "color": "Green",
+            "doc_view": "List",
+            "label": "WooCommerce Order",
+            "link_to": "WooCommerce Order",
+            "type": "DocType"
+        }
+    ],
+    "title": "WooCommerce"
+}
