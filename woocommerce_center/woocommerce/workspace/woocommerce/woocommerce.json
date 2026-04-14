@@ -1,7 +1,9 @@
 {
     "charts": [],
-    "content": "[{\"id\":\"intro\",\"type\":\"onboarding\",\"data\":{\"onboarding_name\":\"\",\"col\":12}},{\"id\":\"shortcuts\",\"type\":\"shortcuts\",\"data\":{\"col\":12}},{\"id\":\"cards\",\"type\":\"card_break\",\"data\":{\"col\":12}},{\"id\":\"settings\",\"type\":\"card_break\",\"data\":{\"col\":12,\"title\":\"Settings\"}}]",
+    "content": "[{\"id\":\"shortcuts_section\",\"type\":\"shortcuts\",\"data\":{\"col\":12}},{\"id\":\"wc_header\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>WooCommerce Center</b></span>\",\"col\":12}},{\"id\":\"main_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Main\",\"col\":4}},{\"id\":\"settings_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings & Logs\",\"col\":4}}]",
     "creation": "2024-01-01 00:00:00.000000",
+    "custom_blocks": [],
+    "docstatus": 0,
     "doctype": "Workspace",
     "for_user": "",
     "hide_custom": 0,
@@ -11,9 +13,16 @@
     "label": "WooCommerce",
     "links": [
         {
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Main",
+            "link_count": 3,
+            "onboard": 0,
+            "type": "Card Break"
+        },
+        {
             "dependencies": "",
             "hidden": 0,
-            "icon": "",
             "is_query_report": 0,
             "label": "WooCommerce Server",
             "link_count": 0,
@@ -25,7 +34,6 @@
         {
             "dependencies": "",
             "hidden": 0,
-            "icon": "",
             "is_query_report": 0,
             "label": "WooCommerce Product",
             "link_count": 0,
@@ -37,7 +45,6 @@
         {
             "dependencies": "",
             "hidden": 0,
-            "icon": "",
             "is_query_report": 0,
             "label": "WooCommerce Order",
             "link_count": 0,
@@ -47,13 +54,20 @@
             "type": "Link"
         },
         {
+            "hidden": 0,
+            "is_query_report": 0,
+            "label": "Settings & Logs",
+            "link_count": 2,
+            "onboard": 0,
+            "type": "Card Break"
+        },
+        {
             "dependencies": "",
             "hidden": 0,
-            "icon": "",
             "is_query_report": 0,
-            "label": "WooCommerce Request Log",
+            "label": "WooCommerce Integration Settings",
             "link_count": 0,
-            "link_to": "WooCommerce Request Log",
+            "link_to": "WooCommerce Integration Settings",
             "link_type": "DocType",
             "onboard": 0,
             "type": "Link"
@@ -61,11 +75,10 @@
         {
             "dependencies": "",
             "hidden": 0,
-            "icon": "",
             "is_query_report": 0,
-            "label": "WooCommerce Integration Settings",
+            "label": "WooCommerce Request Log",
             "link_count": 0,
-            "link_to": "WooCommerce Integration Settings",
+            "link_to": "WooCommerce Request Log",
             "link_type": "DocType",
             "onboard": 0,
             "type": "Link"
@@ -75,6 +88,7 @@
     "modified_by": "Administrator",
     "module": "WooCommerce",
     "name": "WooCommerce",
+    "number_cards": [],
     "owner": "Administrator",
     "parent_page": "",
     "public": 1,
