@@ -1,503 +1,509 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "field:woocommerce_server_url",
- "creation": "2024-01-01 00:00:00.000000",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "connection_section",
-  "woocommerce_server_url",
-  "api_consumer_key",
-  "api_consumer_secret",
-  "col_break_conn",
-  "enable_sync",
-  "verify_ssl",
-  "webhook_secret",
-  "item_sync_section",
-  "enable_item_sync",
-  "name_by",
-  "item_code_naming_series",
-  "col_break_item",
-  "item_group",
-  "uom",
-  "weight_unit",
-  "attribute_for_uom",
-  "image_price_section",
-  "enable_image_sync",
-  "enable_price_list_sync",
-  "price_list",
-  "order_sync_section",
-  "enable_order_sync",
-  "warehouse",
-  "company",
-  "col_break_order",
-  "submit_sales_orders",
-  "sync_sales_invoice",
-  "import_payment",
-  "delivery_after_days",
-  "sales_order_series",
-  "sales_invoice_series",
-  "shipping_section",
-  "enable_shipping_methods_sync",
-  "shipping_rule_map",
-  "fees_section",
-  "enable_order_fees_sync",
-  "account_for_order_fee_lines",
-  "account_for_negative_order_fee_lines",
-  "col_break_fees",
-  "fee_account",
-  "tax_account_for_order_fee_lines",
-  "tax_section",
-  "tax_account",
-  "f_n_f_account",
-  "f_n_f_tax_account",
-  "col_break_tax",
-  "sales_taxes_and_charges_template",
-  "use_actual_tax_type",
-  "enable_tax_lines_sync",
-  "stock_section",
-  "enable_stock_level_synchronisation",
-  "subtract_reserved_stock",
-  "warehouses",
-  "payments_section",
-  "enable_payments_sync",
-  "ignore_date_paid",
-  "cash_bank_account",
-  "col_break_pay",
-  "payment_method_bank_account_mapping",
-  "payment_method_gl_account_mapping",
-  "b2b_section",
-  "enable_dual_accounts",
-  "field_maps_section",
-  "item_field_map",
-  "order_line_item_field_map",
-  "sync_info_section",
-  "last_sync_datetime"
- ],
- "fields": [
-  {
-   "fieldname": "connection_section",
-   "fieldtype": "Section Break",
-   "label": "Connection"
-  },
-  {
-   "description": "e.g. https://your-store.com",
-   "fieldname": "woocommerce_server_url",
-   "fieldtype": "Data",
-   "label": "WooCommerce Server URL",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
-   "fieldname": "api_consumer_key",
-   "fieldtype": "Data",
-   "label": "API Consumer Key",
-   "reqd": 1
-  },
-  {
-   "fieldname": "api_consumer_secret",
-   "fieldtype": "Password",
-   "label": "API Consumer Secret",
-   "reqd": 1
-  },
-  {
-   "fieldname": "col_break_conn",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_sync",
-   "fieldtype": "Check",
-   "label": "Enable Sync"
-  },
-  {
-   "default": "1",
-   "fieldname": "verify_ssl",
-   "fieldtype": "Check",
-   "label": "Verify SSL"
-  },
-  {
-   "description": "Used to verify incoming WooCommerce webhooks (HMAC-SHA256)",
-   "fieldname": "webhook_secret",
-   "fieldtype": "Password",
-   "label": "Webhook Secret"
-  },
-  {
-   "fieldname": "item_sync_section",
-   "fieldtype": "Section Break",
-   "label": "Item / Product Sync"
-  },
-  {
-   "default": "1",
-   "fieldname": "enable_item_sync",
-   "fieldtype": "Check",
-   "label": "Enable Item Sync"
-  },
-  {
-   "default": "WooCommerce ID",
-   "fieldname": "name_by",
-   "fieldtype": "Select",
-   "label": "Name Items By",
-   "options": "WooCommerce ID\nProduct SKU\nNaming Series"
-  },
-  {
-   "depends_on": "eval:doc.name_by=='Naming Series'",
-   "fieldname": "item_code_naming_series",
-   "fieldtype": "Data",
-   "label": "Item Naming Series"
-  },
-  {
-   "fieldname": "col_break_item",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "WooCommerce Products",
-   "fieldname": "item_group",
-   "fieldtype": "Link",
-   "label": "Default Item Group",
-   "options": "Item Group"
-  },
-  {
-   "default": "Nos",
-   "fieldname": "uom",
-   "fieldtype": "Link",
-   "label": "Default UOM",
-   "options": "UOM"
-  },
-  {
-   "default": "kg",
-   "fieldname": "weight_unit",
-   "fieldtype": "Select",
-   "label": "Weight Unit",
-   "options": "\ng\nkg\nlb\nlbs\noz"
-  },
-  {
-   "fieldname": "attribute_for_uom",
-   "fieldtype": "Link",
-   "label": "Attribute for UOM",
-   "options": "Item Attribute"
-  },
-  {
-   "fieldname": "image_price_section",
-   "fieldtype": "Section Break",
-   "label": "Images & Prices"
-  },
-  {
-   "default": "1",
-   "fieldname": "enable_image_sync",
-   "fieldtype": "Check",
-   "label": "Sync Product Images"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_price_list_sync",
-   "fieldtype": "Check",
-   "label": "Sync Item Prices"
-  },
-  {
-   "depends_on": "enable_price_list_sync",
-   "fieldname": "price_list",
-   "fieldtype": "Link",
-   "label": "Price List",
-   "options": "Price List"
-  },
-  {
-   "fieldname": "order_sync_section",
-   "fieldtype": "Section Break",
-   "label": "Order Sync"
-  },
-  {
-   "default": "1",
-   "fieldname": "enable_order_sync",
-   "fieldtype": "Check",
-   "label": "Enable Order Sync"
-  },
-  {
-   "fieldname": "warehouse",
-   "fieldtype": "Link",
-   "label": "Default Warehouse",
-   "options": "Warehouse"
-  },
-  {
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "label": "Company",
-   "options": "Company"
-  },
-  {
-   "fieldname": "col_break_order",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "submit_sales_orders",
-   "fieldtype": "Check",
-   "label": "Auto-Submit Sales Orders"
-  },
-  {
-   "default": "0",
-   "fieldname": "sync_sales_invoice",
-   "fieldtype": "Check",
-   "label": "Auto-Create Sales Invoice"
-  },
-  {
-   "default": "0",
-   "fieldname": "import_payment",
-   "fieldtype": "Check",
-   "label": "Auto-Create Payment Entry"
-  },
-  {
-   "default": "7",
-   "fieldname": "delivery_after_days",
-   "fieldtype": "Int",
-   "label": "Delivery After (Days)"
-  },
-  {
-   "fieldname": "sales_order_series",
-   "fieldtype": "Data",
-   "label": "Sales Order Series"
-  },
-  {
-   "fieldname": "sales_invoice_series",
-   "fieldtype": "Data",
-   "label": "Sales Invoice Series"
-  },
-  {
-   "fieldname": "shipping_section",
-   "fieldtype": "Section Break",
-   "label": "Shipping"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_shipping_methods_sync",
-   "fieldtype": "Check",
-   "label": "Sync Shipping Methods"
-  },
-  {
-   "fieldname": "shipping_rule_map",
-   "fieldtype": "Table",
-   "label": "Shipping Rule Map",
-   "options": "WooCommerce Server Shipping Rule"
-  },
-  {
-   "fieldname": "fees_section",
-   "fieldtype": "Section Break",
-   "label": "Order Fees"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_order_fees_sync",
-   "fieldtype": "Check",
-   "label": "Sync Order Fee Lines"
-  },
-  {
-   "depends_on": "enable_order_fees_sync",
-   "fieldname": "account_for_order_fee_lines",
-   "fieldtype": "Link",
-   "label": "Account for Fee Lines",
-   "options": "Account"
-  },
-  {
-   "depends_on": "enable_order_fees_sync",
-   "fieldname": "account_for_negative_order_fee_lines",
-   "fieldtype": "Link",
-   "label": "Account for Negative Fee Lines",
-   "options": "Account"
-  },
-  {
-   "fieldname": "col_break_fees",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "fee_account",
-   "fieldtype": "Link",
-   "label": "Fee Account",
-   "options": "Account"
-  },
-  {
-   "depends_on": "enable_order_fees_sync",
-   "fieldname": "tax_account_for_order_fee_lines",
-   "fieldtype": "Link",
-   "label": "Tax Account for Fee Lines",
-   "options": "Account"
-  },
-  {
-   "fieldname": "tax_section",
-   "fieldtype": "Section Break",
-   "label": "Tax & Charges"
-  },
-  {
-   "fieldname": "tax_account",
-   "fieldtype": "Link",
-   "label": "Tax Account",
-   "options": "Account"
-  },
-  {
-   "fieldname": "f_n_f_account",
-   "fieldtype": "Link",
-   "label": "Freight & Forwarding Account",
-   "options": "Account"
-  },
-  {
-   "fieldname": "f_n_f_tax_account",
-   "fieldtype": "Link",
-   "label": "Freight & Forwarding Tax Account",
-   "options": "Account"
-  },
-  {
-   "fieldname": "col_break_tax",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "sales_taxes_and_charges_template",
-   "fieldtype": "Link",
-   "label": "Sales Taxes and Charges Template",
-   "options": "Sales Taxes and Charges Template"
-  },
-  {
-   "default": "1",
-   "fieldname": "use_actual_tax_type",
-   "fieldtype": "Check",
-   "label": "Use Actual Tax Type"
-  },
-  {
-   "default": "1",
-   "fieldname": "enable_tax_lines_sync",
-   "fieldtype": "Check",
-   "label": "Sync Tax Lines"
-  },
-  {
-   "fieldname": "stock_section",
-   "fieldtype": "Section Break",
-   "label": "Stock Sync"
-  },
-  {
-   "default": "1",
-   "fieldname": "enable_stock_level_synchronisation",
-   "fieldtype": "Check",
-   "label": "Enable Stock Sync"
-  },
-  {
-   "default": "0",
-   "fieldname": "subtract_reserved_stock",
-   "fieldtype": "Check",
-   "label": "Subtract Reserved Stock"
-  },
-  {
-   "fieldname": "warehouses",
-   "fieldtype": "Table",
-   "label": "Warehouses for Stock Sync",
-   "options": "WooCommerce Server Warehouse"
-  },
-  {
-   "fieldname": "payments_section",
-   "fieldtype": "Section Break",
-   "label": "Payments"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_payments_sync",
-   "fieldtype": "Check",
-   "label": "Auto-Create Payment Entries"
-  },
-  {
-   "default": "0",
-   "fieldname": "ignore_date_paid",
-   "fieldtype": "Check",
-   "label": "Ignore Date Paid"
-  },
-  {
-   "fieldname": "cash_bank_account",
-   "fieldtype": "Link",
-   "label": "Default Bank Account",
-   "options": "Bank Account"
-  },
-  {
-   "fieldname": "col_break_pay",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "{}",
-   "description": "JSON: {\"cod\": \"Bank Account Name\", \"stripe\": \"...\"}",
-   "fieldname": "payment_method_bank_account_mapping",
-   "fieldtype": "JSON",
-   "label": "Payment Method \u2192 Bank Account"
-  },
-  {
-   "default": "{}",
-   "description": "JSON: {\"cod\": \"GL Account Name\", \"stripe\": \"...\"}",
-   "fieldname": "payment_method_gl_account_mapping",
-   "fieldtype": "JSON",
-   "label": "Payment Method \u2192 GL Account"
-  },
-  {
-   "fieldname": "b2b_section",
-   "fieldtype": "Section Break",
-   "label": "B2B Settings"
-  },
-  {
-   "default": "0",
-   "description": "Creates separate Customer records for company vs individual orders from the same email",
-   "fieldname": "enable_dual_accounts",
-   "fieldtype": "Check",
-   "label": "Enable Dual B2B/B2C Accounts"
-  },
-  {
-   "fieldname": "field_maps_section",
-   "fieldtype": "Section Break",
-   "label": "Advanced Field Mappings"
-  },
-  {
-   "fieldname": "item_field_map",
-   "fieldtype": "Table",
-   "label": "Item Field Map",
-   "options": "WooCommerce Server Item Field"
-  },
-  {
-   "fieldname": "order_line_item_field_map",
-   "fieldtype": "Table",
-   "label": "Order Line Item Field Map",
-   "options": "WooCommerce Server Order Item Field"
-  },
-  {
-   "fieldname": "sync_info_section",
-   "fieldtype": "Section Break",
-   "label": "Sync Info"
-  },
-  {
-   "fieldname": "last_sync_datetime",
-   "fieldtype": "Datetime",
-   "label": "Last Sync",
-   "read_only": 1
-  }
- ],
- "icon": "fa fa-wordpress",
- "is_submittable": 0,
- "links": [],
- "modified": "2024-01-01 00:00:00.000000",
- "modified_by": "Administrator",
- "module": "WooCommerce",
- "name": "WooCommerce Server",
- "naming_rule": "By fieldname",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "field:woocommerce_server_url",
+    "creation": "2024-01-01 00:00:00.000000",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "connection_section",
+        "woocommerce_server_url",
+        "api_consumer_key",
+        "api_consumer_secret",
+        "col_break_conn",
+        "enable_sync",
+        "verify_ssl",
+        "webhook_secret",
+        "webhook_delivery_urls",
+        "item_sync_section",
+        "enable_item_sync",
+        "name_by",
+        "item_code_naming_series",
+        "col_break_item",
+        "item_group",
+        "uom",
+        "weight_unit",
+        "attribute_for_uom",
+        "image_price_section",
+        "enable_image_sync",
+        "enable_price_list_sync",
+        "price_list",
+        "order_sync_section",
+        "enable_order_sync",
+        "warehouse",
+        "company",
+        "col_break_order",
+        "submit_sales_orders",
+        "sync_sales_invoice",
+        "import_payment",
+        "delivery_after_days",
+        "sales_order_series",
+        "sales_invoice_series",
+        "shipping_section",
+        "enable_shipping_methods_sync",
+        "shipping_rule_map",
+        "fees_section",
+        "enable_order_fees_sync",
+        "account_for_order_fee_lines",
+        "account_for_negative_order_fee_lines",
+        "col_break_fees",
+        "fee_account",
+        "tax_account_for_order_fee_lines",
+        "tax_section",
+        "tax_account",
+        "f_n_f_account",
+        "f_n_f_tax_account",
+        "col_break_tax",
+        "sales_taxes_and_charges_template",
+        "use_actual_tax_type",
+        "enable_tax_lines_sync",
+        "stock_section",
+        "enable_stock_level_synchronisation",
+        "subtract_reserved_stock",
+        "warehouses",
+        "payments_section",
+        "enable_payments_sync",
+        "ignore_date_paid",
+        "cash_bank_account",
+        "col_break_pay",
+        "payment_method_bank_account_mapping",
+        "payment_method_gl_account_mapping",
+        "b2b_section",
+        "enable_dual_accounts",
+        "field_maps_section",
+        "item_field_map",
+        "order_line_item_field_map",
+        "sync_info_section",
+        "last_sync_datetime"
+    ],
+    "fields": [
+        {
+            "fieldname": "connection_section",
+            "fieldtype": "Section Break",
+            "label": "Connection"
+        },
+        {
+            "description": "e.g. https://your-store.com",
+            "fieldname": "woocommerce_server_url",
+            "fieldtype": "Data",
+            "label": "WooCommerce Server URL",
+            "reqd": 1,
+            "unique": 1
+        },
+        {
+            "fieldname": "api_consumer_key",
+            "fieldtype": "Data",
+            "label": "API Consumer Key",
+            "reqd": 1
+        },
+        {
+            "fieldname": "api_consumer_secret",
+            "fieldtype": "Password",
+            "label": "API Consumer Secret",
+            "reqd": 1
+        },
+        {
+            "fieldname": "col_break_conn",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_sync",
+            "fieldtype": "Check",
+            "label": "Enable Sync"
+        },
+        {
+            "default": "1",
+            "fieldname": "verify_ssl",
+            "fieldtype": "Check",
+            "label": "Verify SSL"
+        },
+        {
+            "description": "Used to verify incoming WooCommerce webhooks (HMAC-SHA256)",
+            "fieldname": "webhook_secret",
+            "fieldtype": "Password",
+            "label": "Webhook Secret"
+        },
+        {
+            "fieldname": "webhook_delivery_urls",
+            "fieldtype": "HTML",
+            "label": "Webhook Delivery URLs"
+        },
+        {
+            "fieldname": "item_sync_section",
+            "fieldtype": "Section Break",
+            "label": "Item / Product Sync"
+        },
+        {
+            "default": "1",
+            "fieldname": "enable_item_sync",
+            "fieldtype": "Check",
+            "label": "Enable Item Sync"
+        },
+        {
+            "default": "WooCommerce ID",
+            "fieldname": "name_by",
+            "fieldtype": "Select",
+            "label": "Name Items By",
+            "options": "WooCommerce ID\nProduct SKU\nNaming Series"
+        },
+        {
+            "depends_on": "eval:doc.name_by=='Naming Series'",
+            "fieldname": "item_code_naming_series",
+            "fieldtype": "Data",
+            "label": "Item Naming Series"
+        },
+        {
+            "fieldname": "col_break_item",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "WooCommerce Products",
+            "fieldname": "item_group",
+            "fieldtype": "Link",
+            "label": "Default Item Group",
+            "options": "Item Group"
+        },
+        {
+            "default": "Nos",
+            "fieldname": "uom",
+            "fieldtype": "Link",
+            "label": "Default UOM",
+            "options": "UOM"
+        },
+        {
+            "default": "kg",
+            "fieldname": "weight_unit",
+            "fieldtype": "Select",
+            "label": "Weight Unit",
+            "options": "\ng\nkg\nlb\nlbs\noz"
+        },
+        {
+            "fieldname": "attribute_for_uom",
+            "fieldtype": "Link",
+            "label": "Attribute for UOM",
+            "options": "Item Attribute"
+        },
+        {
+            "fieldname": "image_price_section",
+            "fieldtype": "Section Break",
+            "label": "Images & Prices"
+        },
+        {
+            "default": "1",
+            "fieldname": "enable_image_sync",
+            "fieldtype": "Check",
+            "label": "Sync Product Images"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_price_list_sync",
+            "fieldtype": "Check",
+            "label": "Sync Item Prices"
+        },
+        {
+            "depends_on": "enable_price_list_sync",
+            "fieldname": "price_list",
+            "fieldtype": "Link",
+            "label": "Price List",
+            "options": "Price List"
+        },
+        {
+            "fieldname": "order_sync_section",
+            "fieldtype": "Section Break",
+            "label": "Order Sync"
+        },
+        {
+            "default": "1",
+            "fieldname": "enable_order_sync",
+            "fieldtype": "Check",
+            "label": "Enable Order Sync"
+        },
+        {
+            "fieldname": "warehouse",
+            "fieldtype": "Link",
+            "label": "Default Warehouse",
+            "options": "Warehouse"
+        },
+        {
+            "fieldname": "company",
+            "fieldtype": "Link",
+            "label": "Company",
+            "options": "Company"
+        },
+        {
+            "fieldname": "col_break_order",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "0",
+            "fieldname": "submit_sales_orders",
+            "fieldtype": "Check",
+            "label": "Auto-Submit Sales Orders"
+        },
+        {
+            "default": "0",
+            "fieldname": "sync_sales_invoice",
+            "fieldtype": "Check",
+            "label": "Auto-Create Sales Invoice"
+        },
+        {
+            "default": "0",
+            "fieldname": "import_payment",
+            "fieldtype": "Check",
+            "label": "Auto-Create Payment Entry"
+        },
+        {
+            "default": "7",
+            "fieldname": "delivery_after_days",
+            "fieldtype": "Int",
+            "label": "Delivery After (Days)"
+        },
+        {
+            "fieldname": "sales_order_series",
+            "fieldtype": "Data",
+            "label": "Sales Order Series"
+        },
+        {
+            "fieldname": "sales_invoice_series",
+            "fieldtype": "Data",
+            "label": "Sales Invoice Series"
+        },
+        {
+            "fieldname": "shipping_section",
+            "fieldtype": "Section Break",
+            "label": "Shipping"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_shipping_methods_sync",
+            "fieldtype": "Check",
+            "label": "Sync Shipping Methods"
+        },
+        {
+            "fieldname": "shipping_rule_map",
+            "fieldtype": "Table",
+            "label": "Shipping Rule Map",
+            "options": "WooCommerce Server Shipping Rule"
+        },
+        {
+            "fieldname": "fees_section",
+            "fieldtype": "Section Break",
+            "label": "Order Fees"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_order_fees_sync",
+            "fieldtype": "Check",
+            "label": "Sync Order Fee Lines"
+        },
+        {
+            "depends_on": "enable_order_fees_sync",
+            "fieldname": "account_for_order_fee_lines",
+            "fieldtype": "Link",
+            "label": "Account for Fee Lines",
+            "options": "Account"
+        },
+        {
+            "depends_on": "enable_order_fees_sync",
+            "fieldname": "account_for_negative_order_fee_lines",
+            "fieldtype": "Link",
+            "label": "Account for Negative Fee Lines",
+            "options": "Account"
+        },
+        {
+            "fieldname": "col_break_fees",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "fee_account",
+            "fieldtype": "Link",
+            "label": "Fee Account",
+            "options": "Account"
+        },
+        {
+            "depends_on": "enable_order_fees_sync",
+            "fieldname": "tax_account_for_order_fee_lines",
+            "fieldtype": "Link",
+            "label": "Tax Account for Fee Lines",
+            "options": "Account"
+        },
+        {
+            "fieldname": "tax_section",
+            "fieldtype": "Section Break",
+            "label": "Tax & Charges"
+        },
+        {
+            "fieldname": "tax_account",
+            "fieldtype": "Link",
+            "label": "Tax Account",
+            "options": "Account"
+        },
+        {
+            "fieldname": "f_n_f_account",
+            "fieldtype": "Link",
+            "label": "Freight & Forwarding Account",
+            "options": "Account"
+        },
+        {
+            "fieldname": "f_n_f_tax_account",
+            "fieldtype": "Link",
+            "label": "Freight & Forwarding Tax Account",
+            "options": "Account"
+        },
+        {
+            "fieldname": "col_break_tax",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "sales_taxes_and_charges_template",
+            "fieldtype": "Link",
+            "label": "Sales Taxes and Charges Template",
+            "options": "Sales Taxes and Charges Template"
+        },
+        {
+            "default": "1",
+            "fieldname": "use_actual_tax_type",
+            "fieldtype": "Check",
+            "label": "Use Actual Tax Type"
+        },
+        {
+            "default": "1",
+            "fieldname": "enable_tax_lines_sync",
+            "fieldtype": "Check",
+            "label": "Sync Tax Lines"
+        },
+        {
+            "fieldname": "stock_section",
+            "fieldtype": "Section Break",
+            "label": "Stock Sync"
+        },
+        {
+            "default": "1",
+            "fieldname": "enable_stock_level_synchronisation",
+            "fieldtype": "Check",
+            "label": "Enable Stock Sync"
+        },
+        {
+            "default": "0",
+            "fieldname": "subtract_reserved_stock",
+            "fieldtype": "Check",
+            "label": "Subtract Reserved Stock"
+        },
+        {
+            "fieldname": "warehouses",
+            "fieldtype": "Table",
+            "label": "Warehouses for Stock Sync",
+            "options": "WooCommerce Server Warehouse"
+        },
+        {
+            "fieldname": "payments_section",
+            "fieldtype": "Section Break",
+            "label": "Payments"
+        },
+        {
+            "default": "0",
+            "fieldname": "enable_payments_sync",
+            "fieldtype": "Check",
+            "label": "Auto-Create Payment Entries"
+        },
+        {
+            "default": "0",
+            "fieldname": "ignore_date_paid",
+            "fieldtype": "Check",
+            "label": "Ignore Date Paid"
+        },
+        {
+            "fieldname": "cash_bank_account",
+            "fieldtype": "Link",
+            "label": "Default Bank Account",
+            "options": "Bank Account"
+        },
+        {
+            "fieldname": "col_break_pay",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "{}",
+            "description": "JSON: {\"cod\": \"Bank Account Name\", \"stripe\": \"...\"}",
+            "fieldname": "payment_method_bank_account_mapping",
+            "fieldtype": "JSON",
+            "label": "Payment Method \u2192 Bank Account"
+        },
+        {
+            "default": "{}",
+            "description": "JSON: {\"cod\": \"GL Account Name\", \"stripe\": \"...\"}",
+            "fieldname": "payment_method_gl_account_mapping",
+            "fieldtype": "JSON",
+            "label": "Payment Method \u2192 GL Account"
+        },
+        {
+            "fieldname": "b2b_section",
+            "fieldtype": "Section Break",
+            "label": "B2B Settings"
+        },
+        {
+            "default": "0",
+            "description": "Creates separate Customer records for company vs individual orders from the same email",
+            "fieldname": "enable_dual_accounts",
+            "fieldtype": "Check",
+            "label": "Enable Dual B2B/B2C Accounts"
+        },
+        {
+            "fieldname": "field_maps_section",
+            "fieldtype": "Section Break",
+            "label": "Advanced Field Mappings"
+        },
+        {
+            "fieldname": "item_field_map",
+            "fieldtype": "Table",
+            "label": "Item Field Map",
+            "options": "WooCommerce Server Item Field"
+        },
+        {
+            "fieldname": "order_line_item_field_map",
+            "fieldtype": "Table",
+            "label": "Order Line Item Field Map",
+            "options": "WooCommerce Server Order Item Field"
+        },
+        {
+            "fieldname": "sync_info_section",
+            "fieldtype": "Section Break",
+            "label": "Sync Info"
+        },
+        {
+            "fieldname": "last_sync_datetime",
+            "fieldtype": "Datetime",
+            "label": "Last Sync",
+            "read_only": 1
+        }
+    ],
+    "icon": "fa fa-wordpress",
+    "is_submittable": 0,
+    "links": [],
+    "modified": "2024-01-01 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "WooCommerce",
+    "name": "WooCommerce Server",
+    "naming_rule": "By fieldname",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
 }
