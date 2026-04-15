@@ -1,7 +1,7 @@
 """
 WooCommerce Center — woocommerce_endpoint.py
 Real-time webhook receiver from WooCommerce.
-Supports: order.created, order.updated, order.deleted
+Supports: order.created, order.updated, order.deleted, product.updated
 
 Developer: CodeProMax Tech | Md. Al-Amin | codepromaxtech@gmail.com
 """
@@ -52,8 +52,7 @@ def verify_webhook() -> object:
 	"""
 	Verify the HMAC-SHA256 signature of an incoming WooCommerce webhook.
 	Returns the matching WooCommerce Server document.
-	Raises WebhookVerificationError if no server matches.
-	Ported & enhanced from woocommerce_integration (ALYF).
+	Raises on failure.
 	"""
 	if not frappe.request.data:
 		frappe.log_error("WooCommerce Webhook Error", "No webhook payload received")
@@ -64,7 +63,6 @@ def verify_webhook() -> object:
 		frappe.log_error("WooCommerce Webhook Error", "Webhook signature verification failed — no matching server found")
 		frappe.throw(_("Webhook verification failed"), exc=frappe.AuthenticationError)
 
-	# Set the frappe user to the server owner / system user so subsequent operations run with correct permissions
 	frappe.set_user("Administrator")
 	return server
 
@@ -73,7 +71,6 @@ def process_request_data() -> tuple[bool, Optional[dict]]:
 	"""
 	Parse and return the webhook payload.
 	Returns (skip, data) — skip=True means the payload is a WooCommerce test ping.
-	Ported from woocommerce_integration (ALYF).
 	"""
 	raw = frappe.request.data
 	if isinstance(raw, (bytes, bytearray)):
@@ -82,7 +79,7 @@ def process_request_data() -> tuple[bool, Optional[dict]]:
 	if not raw:
 		return True, None
 
-	# WooCommerce sends a test ping with webhook_id in query string (not the body)
+	# WooCommerce sends a test ping with webhook_id in query string
 	if isinstance(raw, str) and "webhook_id" in frappe.request.args:
 		return True, None
 
@@ -105,17 +102,24 @@ def _log_webhook_error(order_data: Optional[dict] = None):
 	frappe.log_error("WooCommerce Webhook Error", error_message)
 
 
+def _is_ping_request() -> bool:
+	"""
+	Check if this is a WooCommerce URL validation ping (GET/HEAD).
+	WooCommerce pings the delivery URL before saving a webhook to verify it's reachable.
+	"""
+	return frappe.request.method in ("GET", "HEAD")
+
+
 # ──────────────────────────────────────────
 # Webhook Handlers
 # ──────────────────────────────────────────
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def create_order():
-	"""
-	Webhook: order.created
-	Creates a new ERPNext Sales Order from the incoming WooCommerce order.
-	Real-time — triggers immediately on new WooCommerce order.
-	"""
+	"""Webhook: order.created"""
+	if _is_ping_request():
+		return "ok"
+
 	try:
 		server = verify_webhook()
 		skip, order_data = process_request_data()
@@ -136,12 +140,12 @@ def create_order():
 		raise
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def update_order():
-	"""
-	Webhook: order.updated
-	Triggers a bidirectional sync for the updated WooCommerce order.
-	"""
+	"""Webhook: order.updated"""
+	if _is_ping_request():
+		return "ok"
+
 	try:
 		server = verify_webhook()
 		skip, order_data = process_request_data()
@@ -162,12 +166,12 @@ def update_order():
 		raise
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def delete_order():
-	"""
-	Webhook: order.deleted / order.restored
-	Cancels (or restores) the corresponding ERPNext Sales Order.
-	"""
+	"""Webhook: order.deleted"""
+	if _is_ping_request():
+		return "ok"
+
 	try:
 		server = verify_webhook()
 		skip, order_data = process_request_data()
@@ -192,12 +196,12 @@ def delete_order():
 		raise
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def update_product():
-	"""
-	Webhook: product.updated
-	Triggers item sync for the updated WooCommerce product.
-	"""
+	"""Webhook: product.updated"""
+	if _is_ping_request():
+		return "ok"
+
 	try:
 		server = verify_webhook()
 		skip, product_data = process_request_data()
