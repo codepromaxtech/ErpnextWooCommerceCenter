@@ -146,8 +146,7 @@
         },
         {
             "fieldname": "webhook_urls_section",
-            "fieldtype": "Section Break",
-            "hide_border": 1
+            "fieldtype": "Section Break"
         },
         {
             "fieldname": "webhook_delivery_urls",
