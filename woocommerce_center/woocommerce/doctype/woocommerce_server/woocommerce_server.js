@@ -7,6 +7,21 @@ frappe.ui.form.on("WooCommerce Server", {
         // Render webhook delivery URLs FIRST (most important, must always work)
         render_webhook_delivery_urls(frm);
 
+        // Add "Generate Secret" button next to webhook_secret field
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("Generate Webhook Secret"), function () {
+                const arr = new Uint8Array(20);
+                crypto.getRandomValues(arr);
+                const secret = Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
+                frm.set_value("webhook_secret", secret);
+                frm.dirty();
+                frappe.show_alert({
+                    message: __("Webhook secret generated. Remember to save and update it in your WooCommerce webhooks too."),
+                    indicator: "green",
+                });
+            });
+        }
+
         // Only list enabled, non-group warehouses
         try {
             if (frm.fields_dict.warehouses) {
