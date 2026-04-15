@@ -113,7 +113,7 @@ def update_stock_levels_on_woocommerce_site(item_code: str):
 			consumer_secret=wc_server.get_password("api_consumer_secret"),
 			version="wc/v3",
 			timeout=40,
-			verify_ssl=wc_server.verify_ssl,
+			verify_ssl=bool(wc_server.verify_ssl),
 		)
 
 		# Sum quantities from configured warehouses, round down (WC API doesn't accept floats)

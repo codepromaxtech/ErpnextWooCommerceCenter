@@ -7,7 +7,7 @@ frappe.ui.form.on("WooCommerce Server", {
         // Render webhook delivery URLs FIRST (most important, must always work)
         render_webhook_delivery_urls(frm);
 
-        // Add "Generate Secret" button next to webhook_secret field
+        // Add webhook secret buttons
         if (!frm.is_new()) {
             frm.add_custom_button(__("Generate Webhook Secret"), function () {
                 const arr = new Uint8Array(20);
@@ -15,9 +15,35 @@ frappe.ui.form.on("WooCommerce Server", {
                 const secret = Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
                 frm.set_value("webhook_secret", secret);
                 frm.dirty();
-                frappe.show_alert({
-                    message: __("Webhook secret generated. Remember to save and update it in your WooCommerce webhooks too."),
+                frappe.msgprint({
+                    title: __("Webhook Secret Generated"),
+                    message: `<p>${__("Copy this secret and use it in your WooCommerce webhooks:")}</p>
+                        <div class="d-flex align-items-center" style="margin:10px 0">
+                            <code style="font-size:14px;padding:8px 12px;background:#f5f5f5;border-radius:4px;flex:1;word-break:break-all">${secret}</code>
+                            <button class="btn btn-sm btn-primary ml-2" onclick="frappe.utils.copy_to_clipboard('${secret}')">📋 Copy</button>
+                        </div>
+                        <p class="text-warning" style="font-size:12px">⚠ Don't forget to <b>Save</b> this form and update the secret in your WooCommerce webhooks.</p>`,
                     indicator: "green",
+                });
+            });
+
+            frm.add_custom_button(__("Show Webhook Secret"), function () {
+                frappe.call({
+                    method: "frappe.client.get_password",
+                    args: { doctype: "WooCommerce Server", name: frm.doc.name, fieldname: "webhook_secret" },
+                    callback: function (r) {
+                        if (r && r.message) {
+                            frappe.msgprint({
+                                title: __("Current Webhook Secret"),
+                                message: `<div class="d-flex align-items-center" style="margin:10px 0">
+                                    <code style="font-size:14px;padding:8px 12px;background:#f5f5f5;border-radius:4px;flex:1;word-break:break-all">${r.message}</code>
+                                    <button class="btn btn-sm btn-primary ml-2" onclick="frappe.utils.copy_to_clipboard('${r.message}')">📋 Copy</button>
+                                </div>`,
+                            });
+                        } else {
+                            frappe.msgprint(__("No webhook secret set. Click 'Generate Webhook Secret' first."));
+                        }
+                    },
                 });
             });
         }
