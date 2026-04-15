@@ -28,6 +28,13 @@ class WooCommerceServer(Document):
 		self.name = parse_domain_from_url(self.woocommerce_server_url)
 
 	def validate(self):
+		# Auto-prepend https:// if no scheme provided
+		url = self.woocommerce_server_url.strip()
+		if url and not url.startswith(("http://", "https://")):
+			url = "https://" + url
+		# Remove trailing slashes
+		self.woocommerce_server_url = url.rstrip("/")
+
 		result = urlparse(self.woocommerce_server_url)
 		if not all([result.scheme, result.netloc]):
 			frappe.throw(_("Please enter a valid WooCommerce Server URL"))
