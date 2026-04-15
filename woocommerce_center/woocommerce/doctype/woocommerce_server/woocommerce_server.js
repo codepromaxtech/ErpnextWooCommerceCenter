@@ -101,27 +101,48 @@ frappe.ui.form.on("WooCommerce Server", {
                 if (frm.doc.enable_sync) {
                     // Full sync (all products, no date filter)
                     if (frm.doc.enable_item_sync) {
+                        // Check product count first
+                        frm.add_custom_button(
+                            __("Check WC Counts"),
+                            function () {
+                                frappe.call({
+                                    method: "get_wc_product_count",
+                                    doc: frm.doc,
+                                    freeze: true,
+                                    freeze_message: __("Querying WooCommerce API..."),
+                                    callback: function (r) {
+                                        if (r && r.message) {
+                                            let c = r.message;
+                                            frappe.msgprint({
+                                                title: __("WooCommerce Store Counts"),
+                                                message: `<table class="table table-bordered" style="margin:10px 0">
+                                                    <tr><td><b>Products</b></td><td>${c.products}</td></tr>
+                                                    <tr><td><b>Orders</b></td><td>${c.orders}</td></tr>
+                                                </table>`,
+                                                indicator: "blue",
+                                            });
+                                        }
+                                    },
+                                });
+                            },
+                            __("Sync"),
+                        );
+
+                        // Full sync button
                         frm.add_custom_button(
                             __("Sync ALL Products"),
                             function () {
                                 frappe.confirm(
-                                    __(
-                                        "This will fetch ALL products from WooCommerce (may take a while for 1000+ products). Continue?",
-                                    ),
+                                    __("This will queue a background job to fetch ALL products from WooCommerce. For 1000+ products this may take 10-30 minutes. Continue?"),
                                     function () {
                                         frappe.call({
                                             method: "woocommerce_center.tasks.sync_items.sync_all_woocommerce_products",
-                                            freeze: true,
-                                            freeze_message: __(
-                                                "Fetching all WooCommerce Products... This may take several minutes.",
-                                            ),
-                                            callback: function (r) {
-                                                frappe.msgprint(
-                                                    __(
-                                                        "Full product sync queued. {0} products found.",
-                                                        [r.message || 0],
-                                                    ),
-                                                );
+                                            callback: function () {
+                                                frappe.msgprint({
+                                                    title: __("Full Sync Queued"),
+                                                    message: __("A background job is now syncing all products. You'll get a notification when it's done. Check Background Jobs for progress."),
+                                                    indicator: "blue",
+                                                });
                                             },
                                         });
                                     },

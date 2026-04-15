@@ -137,19 +137,39 @@ def sync_woocommerce_products_modified_since(date_time_from=None):
 @frappe.whitelist()
 def sync_all_woocommerce_products():
 	"""
-	Full sync: fetch ALL products from WooCommerce (no date filter).
-	Use for initial setup or to re-sync everything.
+	Full sync: enqueue a background job to fetch ALL products from WooCommerce.
+	Returns immediately — the actual sync runs in a background worker.
 	"""
+	frappe.enqueue(
+		"woocommerce_center.tasks.sync_items._sync_all_woocommerce_products_job",
+		queue="long",
+		timeout=7200,  # 2 hours for large catalogs
+	)
+	return "queued"
+
+
+def _sync_all_woocommerce_products_job():
+	"""Background job: fetch ALL products and sync each one."""
 	wc_products = get_list_of_wc_products()
 	total = len(wc_products)
-	for i, wc_product in enumerate(wc_products):
+	synced = 0
+	errors = 0
+	for wc_product in wc_products:
 		try:
 			run_item_sync(woocommerce_product=wc_product, enqueue=True)
+			synced += 1
 		except Exception:
-			pass  # Skip items with errors — exceptions are logged
+			errors += 1
 
 	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date_items", now())
-	return total
+	frappe.publish_realtime(
+		"msgprint",
+		{
+			"message": f"Full product sync complete: {total} found, {synced} synced, {errors} errors.",
+			"title": "WooCommerce Sync",
+			"indicator": "green",
+		},
+	)
 
 
 # ────────────────────────────────────────────────────────────────
