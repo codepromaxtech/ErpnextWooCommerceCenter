@@ -81,7 +81,7 @@ class WooCommerceResource(Document):
 						consumer_secret=server.get_password("api_consumer_secret"),
 						version="wc/v3",
 						timeout=40,
-						verify_ssl=server.verify_ssl,
+						verify_ssl=bool(server.verify_ssl),
 					),
 					woocommerce_server_url=url,
 					woocommerce_server=server.name,
