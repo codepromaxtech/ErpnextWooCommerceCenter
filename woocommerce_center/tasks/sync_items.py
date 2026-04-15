@@ -118,8 +118,11 @@ def sync_woocommerce_products_modified_since(date_time_from=None):
 	wc_settings = frappe.get_doc("WooCommerce Integration Settings")
 
 	if not date_time_from:
-		# First sync — default to last 30 days
-		date_time_from = add_to_date(now(), days=-30)
+		date_time_from = getattr(wc_settings, "wc_last_sync_date_items", None)
+
+	if not date_time_from:
+		# First sync — start from epoch to get all products
+		date_time_from = "2000-01-01 00:00:00"
 
 	wc_products = get_list_of_wc_products(date_time_from=date_time_from)
 	for wc_product in wc_products:
@@ -129,6 +132,24 @@ def sync_woocommerce_products_modified_since(date_time_from=None):
 			pass  # Skip items with errors — exceptions are logged
 
 	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date_items", now())
+
+
+@frappe.whitelist()
+def sync_all_woocommerce_products():
+	"""
+	Full sync: fetch ALL products from WooCommerce (no date filter).
+	Use for initial setup or to re-sync everything.
+	"""
+	wc_products = get_list_of_wc_products()
+	total = len(wc_products)
+	for i, wc_product in enumerate(wc_products):
+		try:
+			run_item_sync(woocommerce_product=wc_product, enqueue=True)
+		except Exception:
+			pass  # Skip items with errors — exceptions are logged
+
+	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date_items", now())
+	return total
 
 
 # ────────────────────────────────────────────────────────────────
@@ -563,14 +584,12 @@ class SynchroniseItem(SynchroniseWooCommerce):
 # ────────────────────────────────────────────────────────────────
 
 def get_list_of_wc_products(
-	item: ERPNextItemToSync | None = None, date_time_from: datetime | None = None
+	item: ERPNextItemToSync | None = None, date_time_from: datetime | str | None = None
 ) -> list:
 	"""
-	Fetch WooCommerce Products within a date range or linked to an Item, using pagination.
+	Fetch WooCommerce Products, optionally filtered by date or linked Item.
+	If neither parameter is provided, fetches ALL products.
 	"""
-	if not any([date_time_from, item]):
-		raise ValueError("At least one of date_time_from or item parameters are required")
-
 	wc_records_per_page_limit = 100
 	page_length = wc_records_per_page_limit
 	new_results = True

@@ -7,61 +7,219 @@ frappe.ui.form.on("WooCommerce Server", {
         // Render webhook delivery URLs FIRST (most important, must always work)
         render_webhook_delivery_urls(frm);
 
-        // Add webhook secret buttons
-        if (!frm.is_new()) {
-            frm.add_custom_button(__("Generate Webhook Secret"), function () {
-                const arr = new Uint8Array(20);
-                crypto.getRandomValues(arr);
-                const secret = Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
-                frm.set_value("webhook_secret", secret);
-                frm.dirty();
-                frappe.msgprint({
-                    title: __("Webhook Secret Generated"),
-                    message: `<p>${__("Copy this secret and use it in your WooCommerce webhooks:")}</p>
-                        <div class="d-flex align-items-center" style="margin:10px 0">
-                            <code style="font-size:14px;padding:8px 12px;background:#f5f5f5;border-radius:4px;flex:1;word-break:break-all">${secret}</code>
-                            <button class="btn btn-sm btn-primary ml-2" onclick="frappe.utils.copy_to_clipboard('${secret}')">📋 Copy</button>
-                        </div>
-                        <p class="text-warning" style="font-size:12px">⚠ Don't forget to <b>Save</b> this form and update the secret in your WooCommerce webhooks.</p>`,
-                    indicator: "green",
-                });
-            });
-
-            frm.add_custom_button(__("Show Webhook Secret"), function () {
-                frappe.call({
-                    method: "frappe.client.get_password",
-                    args: { doctype: "WooCommerce Server", name: frm.doc.name, fieldname: "webhook_secret" },
-                    callback: function (r) {
-                        if (r && r.message) {
-                            frappe.msgprint({
-                                title: __("Current Webhook Secret"),
-                                message: `<div class="d-flex align-items-center" style="margin:10px 0">
-                                    <code style="font-size:14px;padding:8px 12px;background:#f5f5f5;border-radius:4px;flex:1;word-break:break-all">${r.message}</code>
-                                    <button class="btn btn-sm btn-primary ml-2" onclick="frappe.utils.copy_to_clipboard('${r.message}')">📋 Copy</button>
-                                </div>`,
-                            });
-                        } else {
-                            frappe.msgprint(__("No webhook secret set. Click 'Generate Webhook Secret' first."));
-                        }
-                    },
-                });
-            });
-        }
-
-        // Only list enabled, non-group warehouses
-        try {
-            if (frm.fields_dict.warehouses) {
-                frm.fields_dict.warehouses.get_query = function () {
-                    return { filters: { disabled: 0, is_group: 0 } };
-                };
-            }
-        } catch (e) {
-            console.warn("WC Center: warehouses query setup failed", e);
-        }
-
         // Only for saved docs
         if (!frm.is_new()) {
-            // Populate Item field mapping options
+            // ── Webhook Secret Buttons ──
+            frm.add_custom_button(
+                __("Generate Webhook Secret"),
+                function () {
+                    const arr = new Uint8Array(20);
+                    crypto.getRandomValues(arr);
+                    const secret = Array.from(arr, (b) =>
+                        b.toString(16).padStart(2, "0"),
+                    ).join("");
+                    frm.set_value("webhook_secret", secret);
+                    frm.dirty();
+                    let d = new frappe.ui.Dialog({
+                        title: __("Webhook Secret Generated"),
+                        fields: [
+                            {
+                                fieldtype: "HTML",
+                                fieldname: "secret_html",
+                                options: `<p>${__("Copy this secret and paste it in each WooCommerce webhook:")}</p>
+                                    <div style="margin:10px 0;padding:10px;background:#f5f5f5;border-radius:4px;border:1px solid #d1d8dd">
+                                        <code style="font-size:14px;word-break:break-all" id="wc-secret-text">${secret}</code>
+                                    </div>
+                                    <p class="text-warning" style="font-size:12px;margin-top:8px">
+                                        ⚠ Don't forget to <b>Save</b> this form and update the secret in your WooCommerce webhooks.
+                                    </p>`,
+                            },
+                        ],
+                        primary_action_label: __("Copy Secret"),
+                        primary_action: function () {
+                            frappe.utils.copy_to_clipboard(secret);
+                            frappe.show_alert({
+                                message: __("Secret copied!"),
+                                indicator: "green",
+                            });
+                        },
+                    });
+                    d.show();
+                },
+                __("Webhook"),
+            );
+
+            frm.add_custom_button(
+                __("Show Webhook Secret"),
+                function () {
+                    frappe.call({
+                        method: "frappe.client.get_password",
+                        args: {
+                            doctype: "WooCommerce Server",
+                            name: frm.doc.name,
+                            fieldname: "webhook_secret",
+                        },
+                        callback: function (r) {
+                            if (r && r.message) {
+                                let secret = r.message;
+                                let d = new frappe.ui.Dialog({
+                                    title: __("Current Webhook Secret"),
+                                    fields: [
+                                        {
+                                            fieldtype: "HTML",
+                                            fieldname: "secret_html",
+                                            options: `<div style="margin:10px 0;padding:10px;background:#f5f5f5;border-radius:4px;border:1px solid #d1d8dd">
+                                                <code style="font-size:14px;word-break:break-all">${secret}</code>
+                                            </div>`,
+                                        },
+                                    ],
+                                    primary_action_label: __("Copy Secret"),
+                                    primary_action: function () {
+                                        frappe.utils.copy_to_clipboard(secret);
+                                        frappe.show_alert({
+                                            message: __("Secret copied!"),
+                                            indicator: "green",
+                                        });
+                                    },
+                                });
+                                d.show();
+                            } else {
+                                frappe.msgprint(
+                                    __(
+                                        "No webhook secret set. Click 'Generate Webhook Secret' first.",
+                                    ),
+                                );
+                            }
+                        },
+                    });
+                },
+                __("Webhook"),
+            );
+
+            // ── Manual Sync Buttons ──
+            try {
+                if (frm.doc.enable_sync) {
+                    // Full sync (all products, no date filter)
+                    if (frm.doc.enable_item_sync) {
+                        frm.add_custom_button(
+                            __("Sync ALL Products"),
+                            function () {
+                                frappe.confirm(
+                                    __(
+                                        "This will fetch ALL products from WooCommerce (may take a while for 1000+ products). Continue?",
+                                    ),
+                                    function () {
+                                        frappe.call({
+                                            method: "woocommerce_center.tasks.sync_items.sync_all_woocommerce_products",
+                                            freeze: true,
+                                            freeze_message: __(
+                                                "Fetching all WooCommerce Products... This may take several minutes.",
+                                            ),
+                                            callback: function (r) {
+                                                frappe.msgprint(
+                                                    __(
+                                                        "Full product sync queued. {0} products found.",
+                                                        [r.message || 0],
+                                                    ),
+                                                );
+                                            },
+                                        });
+                                    },
+                                );
+                            },
+                            __("Sync"),
+                        );
+                    }
+
+                    if (frm.doc.enable_order_sync) {
+                        frm.add_custom_button(
+                            __("Sync Recent Orders"),
+                            function () {
+                                frappe.call({
+                                    method: "woocommerce_center.tasks.sync_sales_orders.sync_woocommerce_orders_modified_since",
+                                    freeze: true,
+                                    freeze_message: __(
+                                        "Syncing WooCommerce Orders...",
+                                    ),
+                                    callback: function () {
+                                        frappe.msgprint(
+                                            __("Order sync completed."),
+                                        );
+                                    },
+                                });
+                            },
+                            __("Sync"),
+                        );
+                    }
+
+                    if (frm.doc.enable_item_sync) {
+                        frm.add_custom_button(
+                            __("Sync Recent Products"),
+                            function () {
+                                frappe.call({
+                                    method: "woocommerce_center.tasks.sync_items.sync_woocommerce_products_modified_since",
+                                    freeze: true,
+                                    freeze_message: __(
+                                        "Syncing WooCommerce Products...",
+                                    ),
+                                    callback: function () {
+                                        frappe.msgprint(
+                                            __("Product sync completed."),
+                                        );
+                                    },
+                                });
+                            },
+                            __("Sync"),
+                        );
+                    }
+
+                    if (frm.doc.enable_price_list_sync) {
+                        frm.add_custom_button(
+                            __("Sync Prices"),
+                            function () {
+                                frappe.call({
+                                    method: "woocommerce_center.tasks.sync_item_prices.run_item_price_sync_in_background",
+                                    freeze: true,
+                                    freeze_message: __(
+                                        "Syncing Item Prices...",
+                                    ),
+                                    callback: function () {
+                                        frappe.msgprint(
+                                            __("Price sync queued."),
+                                        );
+                                    },
+                                });
+                            },
+                            __("Sync"),
+                        );
+                    }
+
+                    if (frm.doc.enable_stock_level_synchronisation) {
+                        frm.add_custom_button(
+                            __("Sync Stock"),
+                            function () {
+                                frappe.call({
+                                    method: "woocommerce_center.tasks.stock_update.update_stock_levels_for_all_enabled_items_in_background",
+                                    freeze: true,
+                                    freeze_message: __(
+                                        "Syncing Stock Levels...",
+                                    ),
+                                    callback: function () {
+                                        frappe.msgprint(
+                                            __("Stock sync queued."),
+                                        );
+                                    },
+                                });
+                            },
+                            __("Sync"),
+                        );
+                    }
+                }
+            } catch (e) {
+                console.warn("WC Center: sync buttons setup failed", e);
+            }
+
+            // ── Field Mapping Options ──
             try {
                 frappe.call({
                     method: "get_item_docfields",
@@ -88,7 +246,6 @@ frappe.ui.form.on("WooCommerce Server", {
                 console.warn("WC Center: Item field map setup failed", e);
             }
 
-            // Populate Sales Order Item field mapping options
             try {
                 frappe.call({
                     method: "get_item_docfields",
@@ -112,87 +269,25 @@ frappe.ui.form.on("WooCommerce Server", {
                     },
                 });
             } catch (e) {
-                console.warn("WC Center: SO Item field map setup failed", e);
+                console.warn(
+                    "WC Center: SO Item field map setup failed",
+                    e,
+                );
             }
+        }
 
-            // ── Manual Sync Buttons ──
-            try {
-                if (frm.doc.enable_sync) {
-                    if (frm.doc.enable_order_sync) {
-                        frm.add_custom_button(
-                            __("Sync Orders Now"),
-                            function () {
-                                frappe.call({
-                                    method: "woocommerce_center.tasks.sync_sales_orders.sync_woocommerce_orders_modified_since",
-                                    freeze: true,
-                                    freeze_message: __("Syncing WooCommerce Orders..."),
-                                    callback: function () {
-                                        frappe.msgprint(__("Order sync completed."));
-                                    },
-                                });
-                            },
-                            __("Sync"),
-                        );
-                    }
-
-                    if (frm.doc.enable_item_sync) {
-                        frm.add_custom_button(
-                            __("Sync Products Now"),
-                            function () {
-                                frappe.call({
-                                    method: "woocommerce_center.tasks.sync_items.sync_woocommerce_products_modified_since",
-                                    freeze: true,
-                                    freeze_message: __("Syncing WooCommerce Products..."),
-                                    callback: function () {
-                                        frappe.msgprint(__("Product sync completed."));
-                                    },
-                                });
-                            },
-                            __("Sync"),
-                        );
-                    }
-
-                    if (frm.doc.enable_price_list_sync) {
-                        frm.add_custom_button(
-                            __("Sync Prices Now"),
-                            function () {
-                                frappe.call({
-                                    method: "woocommerce_center.tasks.sync_item_prices.run_item_price_sync_in_background",
-                                    freeze: true,
-                                    freeze_message: __("Syncing Item Prices..."),
-                                    callback: function () {
-                                        frappe.msgprint(__("Price sync queued."));
-                                    },
-                                });
-                            },
-                            __("Sync"),
-                        );
-                    }
-
-                    if (frm.doc.enable_stock_level_synchronisation) {
-                        frm.add_custom_button(
-                            __("Sync Stock Now"),
-                            function () {
-                                frappe.call({
-                                    method: "woocommerce_center.tasks.stock_update.update_stock_levels_for_all_enabled_items_in_background",
-                                    freeze: true,
-                                    freeze_message: __("Syncing Stock Levels..."),
-                                    callback: function () {
-                                        frappe.msgprint(__("Stock sync queued."));
-                                    },
-                                });
-                            },
-                            __("Sync"),
-                        );
-                    }
-                }
-            } catch (e) {
-                console.warn("WC Center: sync buttons setup failed", e);
+        // Only list enabled, non-group warehouses
+        try {
+            if (frm.fields_dict.warehouses) {
+                frm.fields_dict.warehouses.get_query = function () {
+                    return { filters: { disabled: 0, is_group: 0 } };
+                };
             }
+        } catch (e) {
+            console.warn("WC Center: warehouses query setup failed", e);
         }
     },
 });
-
 
 function render_webhook_delivery_urls(frm) {
     const wrapper = frm.fields_dict.webhook_delivery_urls;
@@ -203,7 +298,7 @@ function render_webhook_delivery_urls(frm) {
 
     if (frm.is_new()) {
         wrapper.$wrapper.html(
-            '<p class="text-muted" style="margin-top:10px">Save the document to see webhook delivery URLs.</p>'
+            '<p class="text-muted" style="margin-top:10px">Save the document to see webhook delivery URLs.</p>',
         );
         return;
     }
@@ -217,10 +312,10 @@ function render_webhook_delivery_urls(frm) {
     base = base.replace(/\/+$/, "");
 
     const endpoints = [
-        { event: "order.created", fn: "create_order", topic: "Order created" },
-        { event: "order.updated", fn: "update_order", topic: "Order updated" },
-        { event: "order.deleted", fn: "delete_order", topic: "Order deleted" },
-        { event: "product.updated", fn: "update_product", topic: "Product updated" },
+        { event: "order.created", fn: "create_order" },
+        { event: "order.updated", fn: "update_order" },
+        { event: "order.deleted", fn: "delete_order" },
+        { event: "product.updated", fn: "update_product" },
     ];
 
     let rows = endpoints
@@ -238,7 +333,7 @@ function render_webhook_delivery_urls(frm) {
                     </button>
                 </div>
             </td>
-        </tr>`
+        </tr>`,
         )
         .join("");
 

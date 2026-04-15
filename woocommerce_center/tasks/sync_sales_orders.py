@@ -128,8 +128,11 @@ def sync_woocommerce_orders_modified_since(date_time_from=None):
 	wc_settings = frappe.get_doc("WooCommerce Integration Settings")
 
 	if not date_time_from:
-		# First sync — default to last 30 days
-		date_time_from = add_to_date(now(), days=-30)
+		date_time_from = getattr(wc_settings, "wc_last_sync_date", None)
+
+	if not date_time_from:
+		# First sync — start from epoch to get all orders
+		date_time_from = "2000-01-01 00:00:00"
 
 	wc_orders = get_list_of_wc_orders(date_time_from=date_time_from)
 	wc_orders += get_list_of_wc_orders(date_time_from=date_time_from, status="trash")
