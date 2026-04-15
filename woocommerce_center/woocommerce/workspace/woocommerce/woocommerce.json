@@ -1,6 +1,6 @@
 {
     "charts": [],
-    "content": "[{\"id\":\"shortcuts_section\",\"type\":\"shortcuts\",\"data\":{\"col\":12}},{\"id\":\"wc_header\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>WooCommerce Center</b></span>\",\"col\":12}},{\"id\":\"main_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Main\",\"col\":4}},{\"id\":\"settings_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings & Logs\",\"col\":4}}]",
+    "content": "[{\"id\":\"wc_header\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>WooCommerce Center</b></span>\",\"col\":12}},{\"id\":\"main_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Main\",\"col\":4}},{\"id\":\"settings_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings & Logs\",\"col\":4}}]",
     "creation": "2024-01-01 00:00:00.000000",
     "custom_blocks": [],
     "docstatus": 0,
@@ -84,7 +84,7 @@
             "type": "Link"
         }
     ],
-    "modified": "2026-04-16 00:00:00.000000",
+    "modified": "2026-04-16 00:45:00.000000",
     "modified_by": "Administrator",
     "module": "WooCommerce",
     "name": "WooCommerce",
@@ -95,28 +95,6 @@
     "restrict_to_domain": "",
     "roles": [],
     "sequence_id": 1,
-    "shortcuts": [
-        {
-            "color": "Purple",
-            "doc_view": "List",
-            "label": "WooCommerce Server",
-            "link_to": "WooCommerce Server",
-            "type": "DocType"
-        },
-        {
-            "color": "Blue",
-            "doc_view": "List",
-            "label": "WooCommerce Product",
-            "link_to": "WooCommerce Product",
-            "type": "DocType"
-        },
-        {
-            "color": "Green",
-            "doc_view": "List",
-            "label": "WooCommerce Order",
-            "link_to": "WooCommerce Order",
-            "type": "DocType"
-        }
-    ],
+    "shortcuts": [],
     "title": "WooCommerce"
 }

@@ -66,23 +66,28 @@ class WooCommerceOrder(WooCommerceResource):
 		wc_servers = frappe.get_all("WooCommerce Server")
 		wc_servers = [frappe.get_doc("WooCommerce Server", server.name) for server in wc_servers]
 
-		wc_api_list = [
-			WooCommerceOrderAPI(
-				api=APIWithRequestLogging(
-					url=server.woocommerce_server_url,
-					consumer_key=server.api_consumer_key,
-					consumer_secret=server.get_password("api_consumer_secret"),
-					version="wc/v3",
-					timeout=40,
-					verify_ssl=server.verify_ssl,
-				),
-				woocommerce_server_url=server.woocommerce_server_url,
-				woocommerce_server=server.name,
-				wc_plugin_advanced_shipment_tracking=server.wc_plugin_advanced_shipment_tracking,
+		wc_api_list = []
+		for server in wc_servers:
+			if server.enable_sync != 1:
+				continue
+			url = server.woocommerce_server_url or ""
+			if url and not url.startswith(("http://", "https://")):
+				url = "https://" + url
+			wc_api_list.append(
+				WooCommerceOrderAPI(
+					api=APIWithRequestLogging(
+						url=url,
+						consumer_key=server.api_consumer_key,
+						consumer_secret=server.get_password("api_consumer_secret"),
+						version="wc/v3",
+						timeout=40,
+						verify_ssl=bool(server.verify_ssl),
+					),
+					woocommerce_server_url=url,
+					woocommerce_server=server.name,
+					wc_plugin_advanced_shipment_tracking=bool(getattr(server, "wc_plugin_advanced_shipment_tracking", False)),
+				)
 			)
-			for server in wc_servers
-			if server.enable_sync == 1
-		]
 
 		return wc_api_list
 
