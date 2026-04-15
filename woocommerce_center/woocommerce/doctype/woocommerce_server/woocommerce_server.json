@@ -14,8 +14,11 @@
         "col_break_conn",
         "enable_sync",
         "verify_ssl",
-        "erpnext_site_url",
+        "webhook_section",
         "webhook_secret",
+        "col_break_webhook",
+        "erpnext_site_url",
+        "webhook_urls_section",
         "webhook_delivery_urls",
         "item_sync_section",
         "enable_item_sync",
@@ -121,16 +124,30 @@
             "label": "Verify SSL"
         },
         {
-            "description": "Public URL of your ERPNext site (e.g. https://erpnext.aranya.com.bd). Used for webhook delivery URLs. Leave blank to auto-detect from browser.",
+            "fieldname": "webhook_section",
+            "fieldtype": "Section Break",
+            "label": "Webhooks"
+        },
+        {
+            "description": "One secret for all webhooks from this store. Set the same secret in every WooCommerce webhook you create.",
+            "fieldname": "webhook_secret",
+            "fieldtype": "Password",
+            "label": "Webhook Secret"
+        },
+        {
+            "fieldname": "col_break_webhook",
+            "fieldtype": "Column Break"
+        },
+        {
+            "description": "Public URL of your ERPNext site (e.g. https://erpnext.aranya.com.bd). Used for webhook delivery URLs. Leave blank to auto-detect.",
             "fieldname": "erpnext_site_url",
             "fieldtype": "Data",
             "label": "ERPNext Site URL"
         },
         {
-            "description": "Used to verify incoming WooCommerce webhooks (HMAC-SHA256)",
-            "fieldname": "webhook_secret",
-            "fieldtype": "Password",
-            "label": "Webhook Secret"
+            "fieldname": "webhook_urls_section",
+            "fieldtype": "Section Break",
+            "hide_border": 1
         },
         {
             "fieldname": "webhook_delivery_urls",
