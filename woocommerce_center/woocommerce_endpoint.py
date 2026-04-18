@@ -82,6 +82,15 @@ def _is_wc_ping() -> bool:
 	if frappe.request.method in ("GET", "HEAD"):
 		return True
 
+	# WooCommerce test-delivery POST has no HMAC signature, but always sends at least
+	# one WooCommerce-specific header (Topic, Source, or Resource).
+	# Requiring one of these prevents anonymous scanners from getting a 200 response.
+	sig = frappe.get_request_header("X-Wc-Webhook-Signature", "")
+	source = frappe.get_request_header("X-Wc-Webhook-Source", "")
+	is_wc_request = bool(topic or source or resource)
+	if frappe.request.method == "POST" and not sig and is_wc_request:
+		return True
+
 	return False
 
 
