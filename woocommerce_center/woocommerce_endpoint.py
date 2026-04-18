@@ -31,6 +31,15 @@ def _get_server_for_webhook() -> Optional[object]:
 	incoming_sig = frappe.get_request_header("X-Wc-Webhook-Signature", "")
 	payload = frappe.request.data
 
+	if not incoming_sig:
+		frappe.log_error(
+			"WooCommerce Webhook Debug",
+			f"No X-Wc-Webhook-Signature header found.\n"
+			f"Headers: {dict(frappe.request.headers)}\n"
+			f"Enabled servers: {[s.name for s in servers]}",
+		)
+		return None
+
 	for server in servers:
 		server_doc = frappe.get_doc("WooCommerce Server", server.name)
 		webhook_secret = server_doc.get_password("webhook_secret", raise_exception=False)
@@ -48,6 +57,34 @@ def _get_server_for_webhook() -> Optional[object]:
 	return None
 
 
+def _is_wc_ping() -> bool:
+	"""
+	Detect WooCommerce webhook verification "ping" requests.
+	WooCommerce sends these when a webhook is first created to verify the URL is reachable.
+	Ping characteristics:
+	  - X-Wc-Webhook-Topic header may be empty, 'action.woocommerce_webhook_deliver_ping',
+	    or contain the actual topic
+	  - X-Wc-Webhook-Resource is 'action'
+	  - The body may be empty or contain just the webhook_id
+	"""
+	topic = frappe.get_request_header("X-Wc-Webhook-Topic", "")
+	resource = frappe.get_request_header("X-Wc-Webhook-Resource", "")
+
+	# WooCommerce ping topic
+	if "ping" in topic.lower():
+		return True
+
+	# Resource = "action" is used for pings
+	if resource == "action":
+		return True
+
+	# HEAD/GET are also pings
+	if frappe.request.method in ("GET", "HEAD"):
+		return True
+
+	return False
+
+
 def verify_webhook() -> object:
 	"""
 	Verify the HMAC-SHA256 signature of an incoming WooCommerce webhook.
@@ -60,7 +97,21 @@ def verify_webhook() -> object:
 
 	server = _get_server_for_webhook()
 	if not server:
-		frappe.log_error("WooCommerce Webhook Error", "Webhook signature verification failed — no matching server found")
+		# Enhanced debug logging
+		incoming_sig = frappe.get_request_header("X-Wc-Webhook-Signature", "(missing)")
+		topic = frappe.get_request_header("X-Wc-Webhook-Topic", "(missing)")
+		source = frappe.get_request_header("X-Wc-Webhook-Source", "(missing)")
+		payload_preview = frappe.request.data[:200] if frappe.request.data else b"(empty)"
+		frappe.log_error(
+			"WooCommerce Webhook Error",
+			f"Webhook signature verification failed — no matching server.\n\n"
+			f"Topic: {topic}\n"
+			f"Source: {source}\n"
+			f"Signature: {incoming_sig}\n"
+			f"Payload (first 200 bytes): {payload_preview}\n\n"
+			f"Ensure the webhook secret in WooCommerce matches the 'Webhook Secret' "
+			f"field in your WooCommerce Server document in ERPNext.",
+		)
 		frappe.throw(_("Webhook verification failed"), exc=frappe.AuthenticationError)
 
 	frappe.set_user("Administrator")
@@ -102,12 +153,20 @@ def _log_webhook_error(order_data: Optional[dict] = None):
 	frappe.log_error("WooCommerce Webhook Error", error_message)
 
 
-def _is_ping_request() -> bool:
+def _prepare_webhook_request():
 	"""
-	Check if this is a WooCommerce URL validation ping (GET/HEAD).
-	WooCommerce pings the delivery URL before saving a webhook to verify it's reachable.
+	Common setup for all webhook handler endpoints.
+	Disables Frappe CSRF protection (external POST from WooCommerce has no CSRF token).
+	Returns "ok" for ping requests, None otherwise.
 	"""
-	return frappe.request.method in ("GET", "HEAD")
+	# Critical: bypass CSRF for external webhook POST requests
+	frappe.flags.ignore_csrf = True
+
+	# Handle ping/verification requests before HMAC check
+	if _is_wc_ping():
+		return "ok"
+
+	return None
 
 
 # ──────────────────────────────────────────
@@ -117,8 +176,9 @@ def _is_ping_request() -> bool:
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def create_order():
 	"""Webhook: order.created"""
-	if _is_ping_request():
-		return "ok"
+	ping_response = _prepare_webhook_request()
+	if ping_response:
+		return ping_response
 
 	try:
 		server = verify_webhook()
@@ -143,8 +203,9 @@ def create_order():
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def update_order():
 	"""Webhook: order.updated"""
-	if _is_ping_request():
-		return "ok"
+	ping_response = _prepare_webhook_request()
+	if ping_response:
+		return ping_response
 
 	try:
 		server = verify_webhook()
@@ -169,8 +230,9 @@ def update_order():
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def delete_order():
 	"""Webhook: order.deleted"""
-	if _is_ping_request():
-		return "ok"
+	ping_response = _prepare_webhook_request()
+	if ping_response:
+		return ping_response
 
 	try:
 		server = verify_webhook()
@@ -199,8 +261,9 @@ def delete_order():
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def update_product():
 	"""Webhook: product.updated"""
-	if _is_ping_request():
-		return "ok"
+	ping_response = _prepare_webhook_request()
+	if ping_response:
+		return ping_response
 
 	try:
 		server = verify_webhook()
