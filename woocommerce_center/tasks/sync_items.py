@@ -23,6 +23,16 @@ from woocommerce_center.woocommerce.woocommerce_api import (
 )
 
 
+def _safe_abbr(value: str, max_len: int = 30) -> str:
+	"""
+	Generate a safe ERPNext Item Attribute abbreviation.
+	ERPNext's `abbr` field is limited to 30 characters.
+	We strip spaces and truncate to avoid DB validation errors from long option values
+	(e.g. 'Wash with gentle soap, not detergent' → 30-char abbr).
+	"""
+	return value.replace(" ", "")[:max_len]
+
+
 # ────────────────────────────────────────────────────────────────
 # Hook & Scheduler Entry Points
 # ────────────────────────────────────────────────────────────────
@@ -137,19 +147,39 @@ def sync_woocommerce_products_modified_since(date_time_from=None):
 @frappe.whitelist()
 def sync_all_woocommerce_products():
 	"""
-	Full sync: fetch ALL products from WooCommerce (no date filter).
-	Use for initial setup or to re-sync everything.
+	Full sync: enqueue a background job to fetch ALL products from WooCommerce.
+	Returns immediately — the actual sync runs in a background worker.
 	"""
+	frappe.enqueue(
+		"woocommerce_center.tasks.sync_items._sync_all_woocommerce_products_job",
+		queue="long",
+		timeout=7200,  # 2 hours for large catalogs
+	)
+	return "queued"
+
+
+def _sync_all_woocommerce_products_job():
+	"""Background job: fetch ALL products and sync each one."""
 	wc_products = get_list_of_wc_products()
 	total = len(wc_products)
-	for i, wc_product in enumerate(wc_products):
+	synced = 0
+	errors = 0
+	for wc_product in wc_products:
 		try:
 			run_item_sync(woocommerce_product=wc_product, enqueue=True)
+			synced += 1
 		except Exception:
-			pass  # Skip items with errors — exceptions are logged
+			errors += 1
 
 	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date_items", now())
-	return total
+	frappe.publish_realtime(
+		"msgprint",
+		{
+			"message": f"Full product sync complete: {total} found, {synced} synced, {errors} errors.",
+			"title": "WooCommerce Sync",
+			"indicator": "green",
+		},
+	)
 
 
 # ────────────────────────────────────────────────────────────────
@@ -398,6 +428,11 @@ class SynchroniseItem(SynchroniseWooCommerce):
 		if wc_product.type in ["variable", "variation"]:
 			self.create_or_update_item_attributes(wc_product)
 			wc_attributes = json.loads(wc_product.attributes)
+			# For variable products: only add variation-defining attributes as Item Attributes.
+			# Non-variation attributes (Care, Fabric, Technique, etc.) are informational
+			# in WooCommerce and should not become ERPNext Item Attributes.
+			if wc_product.type == "variable":
+				wc_attributes = [a for a in wc_attributes if a.get("variation", False)]
 			for wc_attribute in wc_attributes:
 				row = item.append("attributes")
 				row.attribute = wc_attribute["name"]
@@ -450,42 +485,51 @@ class SynchroniseItem(SynchroniseWooCommerce):
 
 	def create_or_update_item_attributes(self, wc_product):
 		"""Create or update Item Attributes — accumulate values, don't replace."""
-		if wc_product.attributes:
-			wc_attributes = json.loads(wc_product.attributes)
-			for wc_attribute in wc_attributes:
-				if frappe.db.exists("Item Attribute", wc_attribute["name"]):
-					item_attribute = frappe.get_doc("Item Attribute", wc_attribute["name"])
-				else:
-					item_attribute = frappe.get_doc(
-						{"doctype": "Item Attribute", "attribute_name": wc_attribute["name"]}
-					)
+		if not wc_product.attributes:
+			return
+		wc_attributes = json.loads(wc_product.attributes)
 
-				options = (
-					wc_attribute["options"] if wc_product.type == "variable" else [wc_attribute["option"]]
+		# For variable products: only import variation-defining attributes (variation=true).
+		# Non-variation attributes (e.g. Care, Technique, Fabric) are informational in
+		# WooCommerce and must not be imported as ERPNext Item Attributes — their long
+		# option values can exceed the 30-char abbr field limit and crash the sync.
+		if wc_product.type == "variable":
+			wc_attributes = [a for a in wc_attributes if a.get("variation", False)]
+
+		for wc_attribute in wc_attributes:
+			if frappe.db.exists("Item Attribute", wc_attribute["name"]):
+				item_attribute = frappe.get_doc("Item Attribute", wc_attribute["name"])
+			else:
+				item_attribute = frappe.get_doc(
+					{"doctype": "Item Attribute", "attribute_name": wc_attribute["name"]}
 				)
 
-				# Accumulate new attribute values rather than replacing existing ones
-				existing_values = {val.attribute_value for val in item_attribute.item_attribute_values}
-				new_values = set(options) - existing_values
-				if new_values or len(item_attribute.item_attribute_values) == 0:
-					if len(item_attribute.item_attribute_values) == 0:
-						# No existing values — add all
-						for option in options:
-							row = item_attribute.append("item_attribute_values")
-							row.attribute_value = option
-							row.abbr = option.replace(" ", "")
-					else:
-						# Accumulate new values
-						for option in new_values:
-							row = item_attribute.append("item_attribute_values")
-							row.attribute_value = option
-							row.abbr = option.replace(" ", "")
+			options = (
+				wc_attribute["options"] if wc_product.type == "variable" else [wc_attribute["option"]]
+			)
 
-				item_attribute.flags.ignore_mandatory = True
-				if not item_attribute.name:
-					item_attribute.insert()
+			# Accumulate new attribute values rather than replacing existing ones
+			existing_values = {val.attribute_value for val in item_attribute.item_attribute_values}
+			new_values = set(options) - existing_values
+			if new_values or len(item_attribute.item_attribute_values) == 0:
+				if len(item_attribute.item_attribute_values) == 0:
+					# No existing values — add all
+					for option in options:
+						row = item_attribute.append("item_attribute_values")
+						row.attribute_value = option
+						row.abbr = _safe_abbr(option)  # max 30 chars
 				else:
-					item_attribute.save()
+					# Accumulate new values only
+					for option in new_values:
+						row = item_attribute.append("item_attribute_values")
+						row.attribute_value = option
+						row.abbr = _safe_abbr(option)  # max 30 chars
+
+			item_attribute.flags.ignore_mandatory = True
+			if not item_attribute.name:
+				item_attribute.insert()
+			else:
+				item_attribute.save()
 
 	def set_item_fields(self, item: Item) -> tuple[bool, Item]:
 		"""
