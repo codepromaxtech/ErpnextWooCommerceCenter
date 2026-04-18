@@ -62,11 +62,11 @@ def _is_wc_ping() -> bool:
 	Detect WooCommerce webhook verification "ping" requests.
 	WooCommerce sends these when a webhook is first created to verify the URL is reachable.
 	Ping characteristics:
-	  - X-Wc-Webhook-Topic header may be empty, 'action.woocommerce_webhook_deliver_ping',
-	    or contain the actual topic
-	  - X-Wc-Webhook-Resource is 'action'
-	  - The body may be empty or contain just the webhook_id
-	  - No X-Wc-Webhook-Signature header (test delivery has no HMAC)
+	  - X-Wc-Webhook-Topic, X-Wc-Webhook-Source, or X-Wc-Webhook-Resource header is present
+	  - X-Wc-Webhook-Resource is 'action' for action-type pings
+	  - No X-Wc-Webhook-Signature header on the initial test delivery
+	Security: requires at least one genuine WooCommerce header alongside the missing
+	signature so random internet scanners cannot enumerate this endpoint.
 	"""
 	topic = frappe.get_request_header("X-Wc-Webhook-Topic", "")
 	resource = frappe.get_request_header("X-Wc-Webhook-Resource", "")
@@ -83,11 +83,13 @@ def _is_wc_ping() -> bool:
 	if frappe.request.method in ("GET", "HEAD"):
 		return True
 
-	# KEY FIX: WooCommerce test-delivery POST has no HMAC signature at all.
-	# Any POST without X-Wc-Webhook-Signature is a verification ping — return 200
-	# so WooCommerce can save the webhook successfully.
+	# WooCommerce test-delivery POST has no HMAC signature, but always sends at least
+	# one WooCommerce-specific header (Topic, Source, or Resource).
+	# Requiring one of these prevents anonymous scanners from getting a 200 response.
 	sig = frappe.get_request_header("X-Wc-Webhook-Signature", "")
-	if frappe.request.method == "POST" and not sig:
+	source = frappe.get_request_header("X-Wc-Webhook-Source", "")
+	is_wc_request = bool(topic or source or resource)
+	if frappe.request.method == "POST" and not sig and is_wc_request:
 		return True
 
 	return False
