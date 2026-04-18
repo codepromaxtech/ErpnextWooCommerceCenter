@@ -110,6 +110,24 @@ def _is_ping_request() -> bool:
 	return frappe.request.method in ("GET", "HEAD")
 
 
+def _is_wc_ping() -> bool:
+	"""
+	Detect WooCommerce webhook verification pings including test-delivery POSTs.
+	WooCommerce POSTs with no X-Wc-Webhook-Signature when saving a new webhook.
+	We require at least one genuine WooCommerce header to prevent scanner enumeration.
+	"""
+	if frappe.request.method in ("GET", "HEAD"):
+		return True
+	sig = frappe.get_request_header("X-Wc-Webhook-Signature", "")
+	topic = frappe.get_request_header("X-Wc-Webhook-Topic", "")
+	source = frappe.get_request_header("X-Wc-Webhook-Source", "")
+	resource = frappe.get_request_header("X-Wc-Webhook-Resource", "")
+	is_wc_request = bool(topic or source or resource)
+	if frappe.request.method == "POST" and not sig and is_wc_request:
+		return True
+	return False
+
+
 # ──────────────────────────────────────────
 # Webhook Handlers
 # ──────────────────────────────────────────
@@ -117,7 +135,7 @@ def _is_ping_request() -> bool:
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def create_order():
 	"""Webhook: order.created"""
-	if _is_ping_request():
+	if _is_wc_ping():
 		return "ok"
 
 	try:
@@ -143,7 +161,7 @@ def create_order():
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def update_order():
 	"""Webhook: order.updated"""
-	if _is_ping_request():
+	if _is_wc_ping():
 		return "ok"
 
 	try:
@@ -169,7 +187,7 @@ def update_order():
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def delete_order():
 	"""Webhook: order.deleted"""
-	if _is_ping_request():
+	if _is_wc_ping():
 		return "ok"
 
 	try:
@@ -199,7 +217,7 @@ def delete_order():
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
 def update_product():
 	"""Webhook: product.updated"""
-	if _is_ping_request():
+	if _is_wc_ping():
 		return "ok"
 
 	try:
