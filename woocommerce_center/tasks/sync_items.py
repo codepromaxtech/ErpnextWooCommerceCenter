@@ -471,7 +471,36 @@ class SynchroniseItem(SynchroniseWooCommerce):
 
 		_modified, item = self.set_item_fields(item=item)
 		item.flags.created_by_sync = True
+
+		# Register SKU as a scannable barcode on the item
+		if wc_product.sku:
+			row = item.append("barcodes")
+			row.barcode = wc_product.sku
+			row.barcode_type = ""
+
+		# Store non-variation informational attributes (e.g. Care, Fabric, Technique)
+		# in item description. These have variation=false in WooCommerce — they are
+		# product info, not variant-defining, and can have long values unsuitable for
+		# ERPNext Item Attribute abbr (30-char limit).
+		if wc_product.type != "variation" and wc_product.attributes:
+			wc_all_attrs = json.loads(wc_product.attributes)
+			info_attrs = [a for a in wc_all_attrs if not a.get("variation", False)]
+			if info_attrs:
+				rows_html = "".join(
+					f"<tr><td><strong>{a['name']}</strong></td>"
+					f"<td>{', '.join(str(v) for v in (a.get('options') or [a.get('option', '')]))}</td></tr>"
+					for a in info_attrs
+				)
+				attr_table = (
+					"<div class='wc-info-attributes' style='margin-top:12px;'>"
+					"<table class='table table-condensed table-bordered'>"
+					f"<tbody>{rows_html}</tbody>"
+					"</table></div>"
+				)
+				item.description = (item.description or "") + attr_table
+
 		item.insert()
+
 
 		self.item = ERPNextItemToSync(
 			item=item,

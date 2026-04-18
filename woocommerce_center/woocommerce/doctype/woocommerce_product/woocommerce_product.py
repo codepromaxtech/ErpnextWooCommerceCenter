@@ -69,13 +69,12 @@ class WooCommerceProduct(WooCommerceResource):
 		if args and (metadata := args.get("metadata")) and (set_name := metadata.get("woocommerce_name")):
 			product["title"] = set_name
 		elif wc_name := product.get("woocommerce_name"):
-			if sku := product.get("sku"):
-				product["title"] = f"{sku} - {wc_name}"
-			else:
-				product["title"] = wc_name
+			# SKU is already the item_code in ERPNext — no need to prefix the display name.
+			product["title"] = wc_name
 		else:
 			product["title"] = product.get("woocommerce_id", "Unknown")
 		return product
+
 
 	@staticmethod
 	def override_woocommerce_name(product: dict, name: str):
