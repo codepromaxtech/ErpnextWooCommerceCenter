@@ -15,6 +15,7 @@ from frappe.model.naming import get_default_naming_series, make_autoname
 from woocommerce_center.tasks.sync_sales_orders import run_sales_order_sync
 from woocommerce_center.woocommerce.woocommerce_api import (
 	generate_woocommerce_record_name_from_domain_and_id,
+	resolve_wc_server_name,
 )
 
 
@@ -31,15 +32,17 @@ class CustomSalesOrder(SalesOrder):
 		Otherwise, use normal ERPNext naming.
 		"""
 		if self.woocommerce_id and self.woocommerce_server:
-			wc_server = frappe.get_cached_doc("WooCommerce Server", self.woocommerce_server)
+			wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(self.woocommerce_server))
 			if wc_server.sales_order_series:
 				self.name = make_autoname(key=wc_server.sales_order_series)
 			else:
 				wc_servers = frappe.get_all("WooCommerce Server", fields=["name", "creation"])
 				sorted_list = sorted(wc_servers, key=lambda server: server.creation)
+				# Use the resolved doc name to find the server index
+				resolved = wc_server.name
 				idx = next(
-					(index for (index, d) in enumerate(sorted_list) if d["name"] == self.woocommerce_server),
-					None,
+					(index for (index, d) in enumerate(sorted_list) if d["name"] == resolved),
+					0,  # Default to 0 instead of None to avoid TypeError
 				)
 				self.name = f"WEB{idx + 1}-{int(self.woocommerce_id):06}"
 		else:
@@ -49,7 +52,7 @@ class CustomSalesOrder(SalesOrder):
 	def on_change(self):
 		"""Auto-sync WooCommerce order status based on ERPNext Sales Order status mapping."""
 		if self.woocommerce_id and self.woocommerce_server:
-			wc_server = frappe.get_cached_doc("WooCommerce Server", self.woocommerce_server)
+			wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(self.woocommerce_server))
 			if wc_server.enable_so_status_sync:
 				mapping = next(
 					(
@@ -96,7 +99,7 @@ def update_woocommerce_order_shipment_trackings(doc: str, shipment_trackings: li
 def get_woocommerce_order(woocommerce_server, woocommerce_id):
 	"""Retrieves a WooCommerce order by server and ID."""
 	wc_order_name = generate_woocommerce_record_name_from_domain_and_id(woocommerce_server, woocommerce_id)
-	wc_server = frappe.get_cached_doc("WooCommerce Server", woocommerce_server)
+	wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(woocommerce_server))
 
 	if not wc_server:
 		frappe.throw(
