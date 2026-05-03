@@ -17,7 +17,7 @@ from woocommerce import API
 from woocommerce_center.woocommerce.doctype.woocommerce_order.woocommerce_order import (
 	WC_ORDER_STATUS_MAPPING,
 )
-from woocommerce_center.woocommerce.woocommerce_api import parse_domain_from_url
+from woocommerce_center.woocommerce.woocommerce_api import parse_domain_from_url, resolve_wc_server_name
 
 
 
@@ -168,5 +168,5 @@ class WooCommerceServer(Document):
 @frappe.whitelist()
 def get_woocommerce_shipment_providers(woocommerce_server: str):
 	"""Return the Shipment Providers for a given WooCommerce Server."""
-	wc_server = frappe.get_cached_doc("WooCommerce Server", woocommerce_server)
+	wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(woocommerce_server))
 	return wc_server.wc_ast_shipment_providers

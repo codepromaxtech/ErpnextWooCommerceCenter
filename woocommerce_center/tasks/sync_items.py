@@ -20,6 +20,7 @@ from woocommerce_center.exceptions import SyncDisabledError
 from woocommerce_center.tasks.sync import SynchroniseWooCommerce
 from woocommerce_center.woocommerce.woocommerce_api import (
 	generate_woocommerce_record_name_from_domain_and_id,
+	resolve_wc_server_name,
 )
 
 
@@ -248,7 +249,7 @@ class SynchroniseItem(SynchroniseWooCommerce):
 		"""
 		if self.item and not self.woocommerce_product and self.item.item_woocommerce_server.woocommerce_id:
 			wc_server = frappe.get_cached_doc(
-				"WooCommerce Server", self.item.item_woocommerce_server.woocommerce_server
+				"WooCommerce Server", resolve_wc_server_name(self.item.item_woocommerce_server.woocommerce_server)
 			)
 			if not wc_server.enable_sync:
 				raise SyncDisabledError(wc_server)
@@ -272,8 +273,15 @@ class SynchroniseItem(SynchroniseWooCommerce):
 		iws = frappe.qb.DocType("Item WooCommerce Server")
 		itm = frappe.qb.DocType("Item")
 
+		# The stored woocommerce_server on Item WooCommerce Server could be either
+		# a bare domain ('yoursite.com') or the resolved doc name ('https://yoursite.com').
+		# Search for both to handle legacy data.
+		raw_domain = self.woocommerce_product.woocommerce_server
+		resolved_name = resolve_wc_server_name(raw_domain)
+		server_variants = list({raw_domain, resolved_name})  # deduplicate if same
+
 		and_conditions = [
-			iws.woocommerce_server == self.woocommerce_product.woocommerce_server,
+			iws.woocommerce_server.isin(server_variants),
 			iws.woocommerce_id == self.woocommerce_product.woocommerce_id,
 		]
 
@@ -326,7 +334,7 @@ class SynchroniseItem(SynchroniseWooCommerce):
 
 		fields_updated, item.item = self.set_item_fields(item=item.item)
 
-		wc_server = frappe.get_cached_doc("WooCommerce Server", woocommerce_product.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(woocommerce_product.woocommerce_server))
 		if wc_server.enable_image_sync:
 			wc_product_images = json.loads(woocommerce_product.images)
 			if len(wc_product_images) > 0:
@@ -420,7 +428,7 @@ class SynchroniseItem(SynchroniseWooCommerce):
 
 	def create_item(self, wc_product) -> None:
 		"""Create an ERPNext Item from the given WooCommerce Product."""
-		wc_server = frappe.get_cached_doc("WooCommerce Server", wc_product.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(wc_product.woocommerce_server))
 
 		item = frappe.new_doc("Item")
 
@@ -450,11 +458,39 @@ class SynchroniseItem(SynchroniseWooCommerce):
 			item.variant_of = parent_item.item_code
 
 		# Flexible item code naming (ported from connector)
-		item.item_code = (
+		desired_item_code = (
 			wc_product.sku
 			if wc_server.name_by == "Product SKU" and wc_product.sku
 			else str(wc_product.woocommerce_id)
 		)
+
+		# ── Pre-check: does an item with this code already exist? ──
+		existing_item = frappe.db.get_value("Item", desired_item_code, "name")
+		if existing_item:
+			existing = frappe.get_doc("Item", existing_item)
+			# Check whether the existing item is already linked to this WC product
+			already_linked = any(
+				str(iws.woocommerce_id) == str(wc_product.woocommerce_id)
+				and iws.woocommerce_server in (wc_product.woocommerce_server, wc_server.name)
+				for iws in existing.woocommerce_servers
+			)
+			if already_linked:
+				# The item exists and is already linked — switch to the update path
+				self.item = ERPNextItemToSync(
+					item=existing,
+					item_woocommerce_server_idx=next(
+						iws.idx
+						for iws in existing.woocommerce_servers
+						if iws.woocommerce_server in (wc_product.woocommerce_server, wc_server.name)
+					),
+				)
+				self.update_item(wc_product, self.item)
+				return
+
+			# The existing item is unrelated — use a server-qualified code to avoid collision
+			desired_item_code = f"{wc_product.woocommerce_server}-{wc_product.woocommerce_id}"
+
+		item.item_code = desired_item_code
 		item.stock_uom = wc_server.uom or _("Nos")
 		item.item_group = wc_server.item_group
 		item.item_name = wc_product.woocommerce_name
@@ -507,7 +543,7 @@ class SynchroniseItem(SynchroniseWooCommerce):
 			item_woocommerce_server_idx=next(
 				iws.idx
 				for iws in item.woocommerce_servers
-				if iws.woocommerce_server == wc_product.woocommerce_server
+				if iws.woocommerce_server in (wc_product.woocommerce_server, wc_server.name)
 			),
 		)
 		self.set_sync_hash()
@@ -568,7 +604,7 @@ class SynchroniseItem(SynchroniseWooCommerce):
 		item_dirty = False
 		if item and self.woocommerce_product:
 			wc_server = frappe.get_cached_doc(
-				"WooCommerce Server", self.woocommerce_product.woocommerce_server
+				"WooCommerce Server", resolve_wc_server_name(self.woocommerce_product.woocommerce_server)
 			)
 			if wc_server.item_field_map:
 				woocommerce_product_dict = (
@@ -593,7 +629,7 @@ class SynchroniseItem(SynchroniseWooCommerce):
 		"""
 		wc_product_dirty = False
 		if item and woocommerce_product:
-			wc_server = frappe.get_cached_doc("WooCommerce Server", woocommerce_product.woocommerce_server)
+			wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(woocommerce_product.woocommerce_server))
 			if wc_server.item_field_map:
 				wc_product_with_deserialised_fields = (
 					woocommerce_product.deserialize_attributes_of_type_dict_or_list(woocommerce_product)
@@ -675,7 +711,10 @@ def get_list_of_wc_products(
 		filters.append(["WooCommerce Product", "date_modified", ">", date_time_from])
 	if item:
 		filters.append(["WooCommerce Product", "id", "=", item.item_woocommerce_server.woocommerce_id])
-		servers = [item.item_woocommerce_server.woocommerce_server]
+		resolved = resolve_wc_server_name(item.item_woocommerce_server.woocommerce_server)
+		servers = [item.item_woocommerce_server.woocommerce_server, resolved]
+		# Deduplicate
+		servers = list(set(servers))
 
 	while new_results:
 		woocommerce_product = frappe.get_doc({"doctype": "WooCommerce Product"})
@@ -699,7 +738,7 @@ def get_list_of_wc_products(
 
 def get_item_price_rate(item: ERPNextItemToSync):
 	"""Get the Item Price if Item Price sync is enabled."""
-	wc_server = frappe.get_cached_doc("WooCommerce Server", item.item_woocommerce_server.woocommerce_server)
+	wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(item.item_woocommerce_server.woocommerce_server))
 	if wc_server.enable_price_list_sync:
 		item_prices = frappe.get_all(
 			"Item Price",
