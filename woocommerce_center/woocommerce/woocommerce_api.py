@@ -498,6 +498,34 @@ def parse_domain_from_url(url: str) -> str:
 	return domain
 
 
+def resolve_wc_server_name(domain_or_name: str) -> str:
+	"""
+	Resolve the correct WooCommerce Server document name from a domain string.
+
+	WooCommerce Product records store the server reference as a bare domain
+	(e.g. 'yoursite.com'), but older WooCommerce Server documents may have been
+	named with the full URL (e.g. 'https://yoursite.com') before the Python
+	autoname override was added.  This helper tries the exact name first, then
+	falls back to URL-prefixed variants so that lookups succeed regardless of
+	which naming convention was used when the server document was created.
+	"""
+	if frappe.db.exists("WooCommerce Server", domain_or_name):
+		return domain_or_name
+
+	# Try with https:// prefix
+	https_name = f"https://{domain_or_name}"
+	if frappe.db.exists("WooCommerce Server", https_name):
+		return https_name
+
+	# Try with http:// prefix
+	http_name = f"http://{domain_or_name}"
+	if frappe.db.exists("WooCommerce Server", http_name):
+		return http_name
+
+	# Return original — let the caller surface the DoesNotExistError
+	return domain_or_name
+
+
 def get_wc_parameters_from_filters(filters: list) -> dict:
 	"""
 	Map Frappe list-view filter tuples to WooCommerce API query parameters.

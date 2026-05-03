@@ -17,7 +17,7 @@ from woocommerce import API
 from woocommerce_center.woocommerce.doctype.woocommerce_order.woocommerce_order import (
 	WC_ORDER_STATUS_MAPPING,
 )
-from woocommerce_center.woocommerce.woocommerce_api import parse_domain_from_url
+from woocommerce_center.woocommerce.woocommerce_api import parse_domain_from_url, resolve_wc_server_name
 
 
 
@@ -132,7 +132,34 @@ class WooCommerceServer(Document):
 		return docfields + custom_fields
 
 	@frappe.whitelist()
-	@lru_cache(maxsize=32)
+	def get_wc_product_count(self) -> dict:
+		"""Get total product and order counts from WooCommerce API."""
+		url = self.woocommerce_server_url
+		if url and not url.startswith(("http://", "https://")):
+			url = "https://" + url
+		wc_api = API(
+			url=url,
+			consumer_key=self.api_consumer_key,
+			consumer_secret=self.get_password("api_consumer_secret"),
+			version="wc/v3",
+			timeout=40,
+			verify_ssl=bool(self.verify_ssl),
+		)
+		counts = {}
+		try:
+			resp = wc_api.get("products", params={"per_page": 1})
+			counts["products"] = int(resp.headers.get("x-wp-total", 0))
+		except Exception:
+			counts["products"] = "error"
+		try:
+			resp = wc_api.get("orders", params={"per_page": 1})
+			counts["orders"] = int(resp.headers.get("x-wp-total", 0))
+		except Exception:
+			counts["orders"] = "error"
+		return counts
+
+	@frappe.whitelist()
+	@redis_cache(ttl=86400)
 	def get_woocommerce_order_status_list(self) -> list[str]:
 		"""Retrieve list of WooCommerce Order Statuses."""
 		return list(WC_ORDER_STATUS_MAPPING.keys())
@@ -141,5 +168,5 @@ class WooCommerceServer(Document):
 @frappe.whitelist()
 def get_woocommerce_shipment_providers(woocommerce_server: str):
 	"""Return the Shipment Providers for a given WooCommerce Server."""
-	wc_server = frappe.get_cached_doc("WooCommerce Server", woocommerce_server)
+	wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(woocommerce_server))
 	return wc_server.wc_ast_shipment_providers

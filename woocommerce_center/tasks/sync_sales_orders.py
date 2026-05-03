@@ -22,6 +22,7 @@ from woocommerce_center.tasks.sync_items import run_item_sync
 from woocommerce_center.utils import add_tax_details, get_country_name_from_code
 from woocommerce_center.woocommerce.woocommerce_api import (
 	generate_woocommerce_record_name_from_domain_and_id,
+	resolve_wc_server_name,
 )
 
 
@@ -90,7 +91,7 @@ def run_sales_order_sync(
 			"At least one of sales_order_name, sales_order, woocommerce_order_name, woocommerce_order is required"
 		)
 
-	sync = None
+	sync = None  # Only set when running synchronously (not enqueued)
 
 	if woocommerce_order or woocommerce_order_name:
 		if not woocommerce_order:
@@ -99,10 +100,14 @@ def run_sales_order_sync(
 			)
 			woocommerce_order.load_from_db()
 
-		sync = SynchroniseSalesOrder(woocommerce_order=woocommerce_order)
 		if enqueue:
-			frappe.enqueue(sync.run)
+			frappe.enqueue(
+				"woocommerce_center.tasks.sync_sales_orders.run_sales_order_sync",
+				queue="long",
+				woocommerce_order_name=woocommerce_order.name,
+			)
 		else:
+			sync = SynchroniseSalesOrder(woocommerce_order=woocommerce_order)
 			sync.run()
 
 	elif sales_order_name or sales_order:
@@ -110,10 +115,14 @@ def run_sales_order_sync(
 			sales_order = frappe.get_doc("Sales Order", sales_order_name)
 		if not sales_order.woocommerce_server:
 			frappe.throw(_("No WooCommerce Server defined for Sales Order {0}").format(sales_order_name))
-		sync = SynchroniseSalesOrder(sales_order=sales_order)
 		if enqueue:
-			frappe.enqueue(sync.run)
+			frappe.enqueue(
+				"woocommerce_center.tasks.sync_sales_orders.run_sales_order_sync",
+				queue="long",
+				sales_order_name=sales_order.name,
+			)
 		else:
+			sync = SynchroniseSalesOrder(sales_order=sales_order)
 			sync.run()
 
 	return (
@@ -140,9 +149,55 @@ def sync_woocommerce_orders_modified_since(date_time_from=None):
 		try:
 			run_sales_order_sync(woocommerce_order=wc_order, enqueue=True)
 		except Exception:
-			pass  # Skip orders with errors — exceptions are logged
+			frappe.log_error(
+				"WooCommerce Error",
+				f"Failed to sync WooCommerce Order {wc_order.name}\n{frappe.get_traceback()}"
+			)
 
 	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date", now())
+
+
+@frappe.whitelist()
+def sync_all_woocommerce_orders():
+	"""
+	Full sync: enqueue a background job to fetch ALL orders from WooCommerce.
+	Returns immediately — the actual sync runs in a background worker.
+	"""
+	frappe.enqueue(
+		"woocommerce_center.tasks.sync_sales_orders._sync_all_woocommerce_orders_job",
+		queue="long",
+		timeout=7200,  # 2 hours for large order sets
+	)
+	return "queued"
+
+
+def _sync_all_woocommerce_orders_job():
+	"""Background job: fetch ALL orders and sync each one."""
+	wc_orders = get_list_of_wc_orders(date_time_from="2000-01-01 00:00:00")
+	wc_orders += get_list_of_wc_orders(date_time_from="2000-01-01 00:00:00", status="trash")
+	total = len(wc_orders)
+	synced = 0
+	errors = 0
+	for wc_order in wc_orders:
+		try:
+			run_sales_order_sync(woocommerce_order=wc_order, enqueue=True)
+			synced += 1
+		except Exception:
+			errors += 1
+			frappe.log_error(
+				"WooCommerce Error",
+				f"Failed to sync WooCommerce Order {wc_order.name}\n{frappe.get_traceback()}"
+			)
+
+	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date", now())
+	frappe.publish_realtime(
+		"msgprint",
+		{
+			"message": f"Full order sync complete: {total} found, {synced} synced, {errors} errors.",
+			"title": "WooCommerce Sync",
+			"indicator": "green",
+		},
+	)
 
 
 # ────────────────────────────────────────────────────────────────
@@ -184,7 +239,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 	def get_corresponding_sales_order_or_woocommerce_order(self):
 		"""Find matching counterpart document."""
 		if self.sales_order and not self.woocommerce_order and self.sales_order.woocommerce_id:
-			wc_server = frappe.get_cached_doc("WooCommerce Server", self.sales_order.woocommerce_server)
+			wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(self.sales_order.woocommerce_server))
 			if not wc_server.enable_sync:
 				raise SyncDisabledError(wc_server)
 
@@ -198,11 +253,17 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 
 	def get_erpnext_sales_order(self):
 		"""Find the ERPNext Sales Order linked to the WooCommerce Order."""
+		# The stored woocommerce_server on Sales Order could be either
+		# a bare domain or the resolved doc name. Search for both.
+		raw_domain = self.woocommerce_order.woocommerce_server
+		resolved_name = resolve_wc_server_name(raw_domain)
+		server_variants = list({raw_domain, resolved_name})
+
 		filters = [
 			["Sales Order", "woocommerce_id", "is", "set"],
 			["Sales Order", "woocommerce_server", "is", "set"],
 			["Sales Order", "woocommerce_id", "=", self.woocommerce_order.id],
-			["Sales Order", "woocommerce_server", "=", self.woocommerce_order.woocommerce_server],
+			["Sales Order", "woocommerce_server", "in", server_variants],
 		]
 
 		sales_orders = frappe.get_all("Sales Order", filters=filters, fields=["name"])
@@ -278,7 +339,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 
 	def create_and_link_payment_entry(self, wc_order, sales_order: SalesOrder) -> bool:
 		"""Create a Payment Entry for a WooCommerce Order marked as paid."""
-		wc_server = frappe.get_cached_doc("WooCommerce Server", sales_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(sales_order.woocommerce_server))
 		if not wc_server:
 			raise ValueError("Could not find woocommerce_server in list of servers")
 
@@ -379,15 +440,17 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 			wc_order_dirty = True
 
 		# Update line items if enabled
-		wc_server = frappe.get_cached_doc("WooCommerce Server", wc_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(wc_order.woocommerce_server))
 		if getattr(wc_server, "sync_so_items_to_wc", False):
 			# Get WooCommerce IDs for items
+			raw_domain = wc_order.woocommerce_server
+			resolved = resolve_wc_server_name(raw_domain)
 			for so_item in sales_order.items:
 				so_item.woocommerce_id = frappe.get_value(
 					"Item WooCommerce Server",
 					filters={
 						"parent": so_item.item_code,
-						"woocommerce_server": wc_order.woocommerce_server,
+						"woocommerce_server": ["in", list({raw_domain, resolved})],
 					},
 					fieldname="woocommerce_id",
 				)
@@ -436,7 +499,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 		if not (woocommerce_order_line_item and self.sales_order and self.woocommerce_order):
 			return False, woocommerce_order_line_item
 
-		wc_server = frappe.get_cached_doc("WooCommerce Server", self.woocommerce_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(self.woocommerce_order.woocommerce_server))
 		if not wc_server.order_line_item_field_map:
 			return False, woocommerce_order_line_item
 
@@ -480,9 +543,11 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 		new_sales_order.woocommerce_status = WC_ORDER_STATUS_MAPPING_REVERSE.get(
 			wc_order.status, wc_order.status
 		)
-		wc_server = frappe.get_cached_doc("WooCommerce Server", wc_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(wc_order.woocommerce_server))
 
-		new_sales_order.woocommerce_server = wc_order.woocommerce_server
+		# Store the resolved server document name (not raw domain) so future
+		# lookups by woocommerce_server always match the actual doc name.
+		new_sales_order.woocommerce_server = wc_server.name
 		payment_method = (
 			wc_order.payment_method_title
 			if len(wc_order.payment_method_title or "") < 140
@@ -525,6 +590,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 		new_sales_order.reload()
 		self.create_and_link_payment_entry(wc_order, new_sales_order)
 		new_sales_order.save()
+		frappe.db.commit()
 
 	# ── Customer & Address ────────────────
 
@@ -548,7 +614,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 			)
 			return None
 
-		wc_server = frappe.get_cached_doc("WooCommerce Server", wc_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(wc_order.woocommerce_server))
 		if is_guest:
 			customer_identifier = f"Guest-{order_id}"
 		elif company_name and wc_server.enable_dual_accounts:
@@ -615,7 +681,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 
 	def set_items_in_sales_order(self, new_sales_order, wc_order):
 		"""Build Sales Order line items from WooCommerce Order."""
-		wc_server = frappe.get_cached_doc("WooCommerce Server", new_sales_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(new_sales_order.woocommerce_server))
 		if not wc_server.warehouse:
 			frappe.throw(_("Please set Warehouse in WooCommerce Server"))
 
@@ -627,13 +693,17 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 			else:
 				iws = frappe.qb.DocType("Item WooCommerce Server")
 				itm = frappe.qb.DocType("Item")
+				# Search for both raw domain and resolved doc name
+				raw_domain = new_sales_order.woocommerce_server
+				resolved = resolve_wc_server_name(raw_domain)
+				server_variants = list({raw_domain, resolved})
 				item_codes = (
 					frappe.qb.from_(iws)
 					.join(itm)
 					.on(iws.parent == itm.name)
 					.where(
 						(iws.woocommerce_id == cstr(woocomm_item_id))
-						& (iws.woocommerce_server == new_sales_order.woocommerce_server)
+						& (iws.woocommerce_server.isin(server_variants))
 						& (itm.disabled == 0)
 					)
 					.select(iws.parent)
@@ -696,7 +766,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 
 	def set_fee_lines_in_sales_order(self, new_sales_order, wc_order):
 		"""Synchronise Fee Lines from WooCommerce Order to ERPNext Sales Order."""
-		wc_server = frappe.get_cached_doc("WooCommerce Server", new_sales_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(new_sales_order.woocommerce_server))
 		if not wc_server.enable_order_fees_sync:
 			return
 		if not wc_server.account_for_order_fee_lines:
@@ -739,7 +809,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 		if not (so_item and self.woocommerce_order):
 			return so_item_dirty, so_item
 
-		wc_server = frappe.get_cached_doc("WooCommerce Server", self.woocommerce_order.woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(self.woocommerce_order.woocommerce_server))
 		if not wc_server.order_line_item_field_map:
 			return so_item_dirty, so_item
 
@@ -939,7 +1009,7 @@ def get_tax_inc_price_for_woocommerce_line_item(line_item: dict):
 
 def create_placeholder_item(sales_order: SalesOrder):
 	"""Create a placeholder Item for deleted WooCommerce Products."""
-	wc_server = frappe.get_cached_doc("WooCommerce Server", sales_order.woocommerce_server)
+	wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(sales_order.woocommerce_server))
 	if not frappe.db.exists("Item", "DELETED_WOOCOMMERCE_PRODUCT"):
 		item = frappe.new_doc("Item")
 		item.item_code = "DELETED_WOOCOMMERCE_PRODUCT"
