@@ -90,7 +90,7 @@ def run_sales_order_sync(
 			"At least one of sales_order_name, sales_order, woocommerce_order_name, woocommerce_order is required"
 		)
 
-	sync = None
+	sync = None  # Only set when running synchronously (not enqueued)
 
 	if woocommerce_order or woocommerce_order_name:
 		if not woocommerce_order:
@@ -99,10 +99,14 @@ def run_sales_order_sync(
 			)
 			woocommerce_order.load_from_db()
 
-		sync = SynchroniseSalesOrder(woocommerce_order=woocommerce_order)
 		if enqueue:
-			frappe.enqueue(sync.run)
+			frappe.enqueue(
+				"woocommerce_center.tasks.sync_sales_orders.run_sales_order_sync",
+				queue="long",
+				woocommerce_order_name=woocommerce_order.name,
+			)
 		else:
+			sync = SynchroniseSalesOrder(woocommerce_order=woocommerce_order)
 			sync.run()
 
 	elif sales_order_name or sales_order:
@@ -110,10 +114,14 @@ def run_sales_order_sync(
 			sales_order = frappe.get_doc("Sales Order", sales_order_name)
 		if not sales_order.woocommerce_server:
 			frappe.throw(_("No WooCommerce Server defined for Sales Order {0}").format(sales_order_name))
-		sync = SynchroniseSalesOrder(sales_order=sales_order)
 		if enqueue:
-			frappe.enqueue(sync.run)
+			frappe.enqueue(
+				"woocommerce_center.tasks.sync_sales_orders.run_sales_order_sync",
+				queue="long",
+				sales_order_name=sales_order.name,
+			)
 		else:
+			sync = SynchroniseSalesOrder(sales_order=sales_order)
 			sync.run()
 
 	return (
@@ -140,7 +148,10 @@ def sync_woocommerce_orders_modified_since(date_time_from=None):
 		try:
 			run_sales_order_sync(woocommerce_order=wc_order, enqueue=True)
 		except Exception:
-			pass  # Skip orders with errors — exceptions are logged
+			frappe.log_error(
+				"WooCommerce Error",
+				f"Failed to sync WooCommerce Order {wc_order.name}\n{frappe.get_traceback()}"
+			)
 
 	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date", now())
 
@@ -525,6 +536,7 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 		new_sales_order.reload()
 		self.create_and_link_payment_entry(wc_order, new_sales_order)
 		new_sales_order.save()
+		frappe.db.commit()
 
 	# ── Customer & Address ────────────────
 
