@@ -62,10 +62,11 @@ def _is_wc_ping() -> bool:
 	Detect WooCommerce webhook verification "ping" requests.
 	WooCommerce sends these when a webhook is first created to verify the URL is reachable.
 	Ping characteristics:
-	  - X-Wc-Webhook-Topic header may be empty, 'action.woocommerce_webhook_deliver_ping',
-	    or contain the actual topic
-	  - X-Wc-Webhook-Resource is 'action'
-	  - The body may be empty or contain just the webhook_id
+	  - X-Wc-Webhook-Topic, X-Wc-Webhook-Source, or X-Wc-Webhook-Resource header is present
+	  - X-Wc-Webhook-Resource is 'action' for action-type pings
+	  - No X-Wc-Webhook-Signature header on the initial test delivery
+	Security: requires at least one genuine WooCommerce header alongside the missing
+	signature so random internet scanners cannot enumerate this endpoint.
 	"""
 	topic = frappe.get_request_header("X-Wc-Webhook-Topic", "")
 	resource = frappe.get_request_header("X-Wc-Webhook-Resource", "")

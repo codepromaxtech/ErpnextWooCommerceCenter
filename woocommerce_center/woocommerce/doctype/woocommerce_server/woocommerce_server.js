@@ -99,25 +99,25 @@ frappe.ui.form.on("WooCommerce Server", {
             // ── Manual Sync Buttons ──
             try {
                 if (frm.doc.enable_sync) {
-                    // Full sync (all products, no date filter)
                     if (frm.doc.enable_item_sync) {
-                        // Check product count first
+                        // Check product & order count from WooCommerce API
                         frm.add_custom_button(
-                            __("Check WC Counts"),
+                            __("🔢 Check Store Counts"),
                             function () {
                                 frappe.call({
                                     method: "get_wc_product_count",
                                     doc: frm.doc,
                                     freeze: true,
-                                    freeze_message: __("Querying WooCommerce API..."),
+                                    freeze_message: __("Querying WooCommerce store..."),
                                     callback: function (r) {
                                         if (r && r.message) {
                                             let c = r.message;
                                             frappe.msgprint({
-                                                title: __("WooCommerce Store Counts"),
-                                                message: `<table class="table table-bordered" style="margin:10px 0">
-                                                    <tr><td><b>Products</b></td><td>${c.products}</td></tr>
-                                                    <tr><td><b>Orders</b></td><td>${c.orders}</td></tr>
+                                                title: __("WooCommerce Store Summary"),
+                                                message: `<p class="text-muted">Total items on your WooCommerce store:</p>
+                                                    <table class="table table-bordered" style="margin:10px 0">
+                                                    <tr><td><b>🛍️ Products</b></td><td>${c.products}</td></tr>
+                                                    <tr><td><b>🛒 Orders</b></td><td>${c.orders}</td></tr>
                                                 </table>`,
                                                 indicator: "blue",
                                             });
@@ -128,19 +128,19 @@ frappe.ui.form.on("WooCommerce Server", {
                             __("Sync"),
                         );
 
-                        // Full sync button
+                        // Full product sync (ALL products)
                         frm.add_custom_button(
-                            __("Sync ALL Products"),
+                            __("📦 Sync All Products"),
                             function () {
                                 frappe.confirm(
-                                    __("This will queue a background job to fetch ALL products from WooCommerce. For 1000+ products this may take 10-30 minutes. Continue?"),
+                                    __("This will fetch <b>ALL products</b> from your WooCommerce store and create/update items in ERPNext.<br><br>For large catalogs (1000+ products) this may take 10–30 minutes.<br><br>Continue?"),
                                     function () {
                                         frappe.call({
                                             method: "woocommerce_center.tasks.sync_items.sync_all_woocommerce_products",
                                             callback: function () {
                                                 frappe.msgprint({
-                                                    title: __("Full Sync Queued"),
-                                                    message: __("A background job is now syncing all products. You'll get a notification when it's done. Check Background Jobs for progress."),
+                                                    title: __("Full Product Sync Queued"),
+                                                    message: __("A background job is now syncing all products from WooCommerce → ERPNext. You'll receive a notification when done.<br><br>Check <b>Background Jobs</b> for progress."),
                                                     indicator: "blue",
                                                 });
                                             },
@@ -150,22 +150,21 @@ frappe.ui.form.on("WooCommerce Server", {
                             },
                             __("Sync"),
                         );
-                    }
 
-                    if (frm.doc.enable_order_sync) {
+                        // Recent products (modified since last sync)
                         frm.add_custom_button(
-                            __("Sync Recent Orders"),
+                            __("📦 Sync Recent Products"),
                             function () {
                                 frappe.call({
-                                    method: "woocommerce_center.tasks.sync_sales_orders.sync_woocommerce_orders_modified_since",
+                                    method: "woocommerce_center.tasks.sync_items.sync_woocommerce_products_modified_since",
                                     freeze: true,
-                                    freeze_message: __(
-                                        "Syncing WooCommerce Orders...",
-                                    ),
+                                    freeze_message: __("Fetching recently modified products..."),
                                     callback: function () {
-                                        frappe.msgprint(
-                                            __("Order sync completed."),
-                                        );
+                                        frappe.msgprint({
+                                            title: __("Recent Product Sync Complete"),
+                                            message: __("Products modified since the last sync have been queued for processing."),
+                                            indicator: "green",
+                                        });
                                     },
                                 });
                             },
@@ -173,20 +172,44 @@ frappe.ui.form.on("WooCommerce Server", {
                         );
                     }
 
-                    if (frm.doc.enable_item_sync) {
+                    if (frm.doc.enable_order_sync) {
+                        // Full order sync (ALL orders)
                         frm.add_custom_button(
-                            __("Sync Recent Products"),
+                            __("🛒 Sync All Orders"),
+                            function () {
+                                frappe.confirm(
+                                    __("This will fetch <b>ALL orders</b> from your WooCommerce store and create/update Sales Orders in ERPNext.<br><br>For stores with many orders this may take 10–30 minutes.<br><br>Continue?"),
+                                    function () {
+                                        frappe.call({
+                                            method: "woocommerce_center.tasks.sync_sales_orders.sync_all_woocommerce_orders",
+                                            callback: function () {
+                                                frappe.msgprint({
+                                                    title: __("Full Order Sync Queued"),
+                                                    message: __("A background job is now syncing all orders from WooCommerce → ERPNext. You'll receive a notification when done.<br><br>Check <b>Background Jobs</b> for progress."),
+                                                    indicator: "blue",
+                                                });
+                                            },
+                                        });
+                                    },
+                                );
+                            },
+                            __("Sync"),
+                        );
+
+                        // Recent orders (modified since last sync)
+                        frm.add_custom_button(
+                            __("🛒 Sync Recent Orders"),
                             function () {
                                 frappe.call({
-                                    method: "woocommerce_center.tasks.sync_items.sync_woocommerce_products_modified_since",
+                                    method: "woocommerce_center.tasks.sync_sales_orders.sync_woocommerce_orders_modified_since",
                                     freeze: true,
-                                    freeze_message: __(
-                                        "Syncing WooCommerce Products...",
-                                    ),
+                                    freeze_message: __("Fetching recently modified orders..."),
                                     callback: function () {
-                                        frappe.msgprint(
-                                            __("Product sync completed."),
-                                        );
+                                        frappe.msgprint({
+                                            title: __("Recent Order Sync Complete"),
+                                            message: __("Orders modified since the last sync have been queued for processing."),
+                                            indicator: "green",
+                                        });
                                     },
                                 });
                             },
@@ -196,18 +219,18 @@ frappe.ui.form.on("WooCommerce Server", {
 
                     if (frm.doc.enable_price_list_sync) {
                         frm.add_custom_button(
-                            __("Sync Prices"),
+                            __("💰 Sync Prices"),
                             function () {
                                 frappe.call({
                                     method: "woocommerce_center.tasks.sync_item_prices.run_item_price_sync_in_background",
                                     freeze: true,
-                                    freeze_message: __(
-                                        "Syncing Item Prices...",
-                                    ),
+                                    freeze_message: __("Syncing item prices..."),
                                     callback: function () {
-                                        frappe.msgprint(
-                                            __("Price sync queued."),
-                                        );
+                                        frappe.msgprint({
+                                            title: __("Price Sync Queued"),
+                                            message: __("Item prices are being synced in the background."),
+                                            indicator: "green",
+                                        });
                                     },
                                 });
                             },
@@ -217,20 +240,25 @@ frappe.ui.form.on("WooCommerce Server", {
 
                     if (frm.doc.enable_stock_level_synchronisation) {
                         frm.add_custom_button(
-                            __("Sync Stock"),
+                            __("📊 Sync Stock Levels"),
                             function () {
-                                frappe.call({
-                                    method: "woocommerce_center.tasks.stock_update.update_stock_levels_for_all_enabled_items_in_background",
-                                    freeze: true,
-                                    freeze_message: __(
-                                        "Syncing Stock Levels...",
-                                    ),
-                                    callback: function () {
-                                        frappe.msgprint(
-                                            __("Stock sync queued."),
-                                        );
+                                frappe.confirm(
+                                    __("This will push current ERPNext stock levels to WooCommerce for all enabled items.<br><br>Continue?"),
+                                    function () {
+                                        frappe.call({
+                                            method: "woocommerce_center.tasks.stock_update.update_stock_levels_for_all_enabled_items_in_background",
+                                            freeze: true,
+                                            freeze_message: __("Queuing stock level updates..."),
+                                            callback: function () {
+                                                frappe.msgprint({
+                                                    title: __("Stock Sync Queued"),
+                                                    message: __("Stock levels are being pushed from ERPNext → WooCommerce in the background."),
+                                                    indicator: "green",
+                                                });
+                                            },
+                                        });
                                     },
-                                });
+                                );
                             },
                             __("Sync"),
                         );

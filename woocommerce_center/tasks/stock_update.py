@@ -10,6 +10,7 @@ import math
 import frappe
 
 from woocommerce_center.tasks.utils import APIWithRequestLogging
+from woocommerce_center.woocommerce.woocommerce_api import resolve_wc_server_name
 
 
 
@@ -97,7 +98,7 @@ def update_stock_levels_on_woocommerce_site(item_code: str):
 
 		woocommerce_id = wc_site.woocommerce_id
 		woocommerce_server = wc_site.woocommerce_server
-		wc_server = frappe.get_cached_doc("WooCommerce Server", woocommerce_server)
+		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(woocommerce_server))
 
 		if (
 			not wc_server
