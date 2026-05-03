@@ -53,11 +53,14 @@ class CustomSalesOrder(SalesOrder):
 		"""Auto-sync WooCommerce order status based on ERPNext Sales Order status mapping."""
 		if self.woocommerce_id and self.woocommerce_server:
 			wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(self.woocommerce_server))
-			if wc_server.enable_so_status_sync:
+			
+			enable_so_status_sync = getattr(wc_server, "enable_so_status_sync", False)
+			if enable_so_status_sync:
+				status_map = getattr(wc_server, "sales_order_status_map", [])
 				mapping = next(
 					(
 						row
-						for row in wc_server.sales_order_status_map
+						for row in status_map
 						if row.erpnext_sales_order_status == self.status
 					),
 					None,
