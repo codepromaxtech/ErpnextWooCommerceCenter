@@ -157,6 +157,49 @@ def sync_woocommerce_orders_modified_since(date_time_from=None):
 	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date", now())
 
 
+@frappe.whitelist()
+def sync_all_woocommerce_orders():
+	"""
+	Full sync: enqueue a background job to fetch ALL orders from WooCommerce.
+	Returns immediately — the actual sync runs in a background worker.
+	"""
+	frappe.enqueue(
+		"woocommerce_center.tasks.sync_sales_orders._sync_all_woocommerce_orders_job",
+		queue="long",
+		timeout=7200,  # 2 hours for large order sets
+	)
+	return "queued"
+
+
+def _sync_all_woocommerce_orders_job():
+	"""Background job: fetch ALL orders and sync each one."""
+	wc_orders = get_list_of_wc_orders(date_time_from="2000-01-01 00:00:00")
+	wc_orders += get_list_of_wc_orders(date_time_from="2000-01-01 00:00:00", status="trash")
+	total = len(wc_orders)
+	synced = 0
+	errors = 0
+	for wc_order in wc_orders:
+		try:
+			run_sales_order_sync(woocommerce_order=wc_order, enqueue=True)
+			synced += 1
+		except Exception:
+			errors += 1
+			frappe.log_error(
+				"WooCommerce Error",
+				f"Failed to sync WooCommerce Order {wc_order.name}\n{frappe.get_traceback()}"
+			)
+
+	frappe.db.set_single_value("WooCommerce Integration Settings", "wc_last_sync_date", now())
+	frappe.publish_realtime(
+		"msgprint",
+		{
+			"message": f"Full order sync complete: {total} found, {synced} synced, {errors} errors.",
+			"title": "WooCommerce Sync",
+			"indicator": "green",
+		},
+	)
+
+
 # ────────────────────────────────────────────────────────────────
 # Main Synchronisation Class
 # ────────────────────────────────────────────────────────────────
