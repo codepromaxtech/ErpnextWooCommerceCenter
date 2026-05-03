@@ -581,6 +581,15 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 
 		self.set_items_in_sales_order(new_sales_order, wc_order)
 		self.set_fee_lines_in_sales_order(new_sales_order, wc_order)
+		
+		# Abort if the WooCommerce order has absolutely zero items and zero fee lines
+		if not new_sales_order.get("items"):
+			frappe.log_error(
+				"WooCommerce Sales Order Sync",
+				f"Skipping Order {wc_order.name} because it has 0 line items."
+			)
+			return
+
 		new_sales_order.flags.ignore_mandatory = True
 		new_sales_order.flags.created_by_sync = True
 		new_sales_order.insert()
