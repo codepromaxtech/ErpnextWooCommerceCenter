@@ -430,17 +430,28 @@ class SynchroniseSalesOrder(SynchroniseWooCommerce):
 		"""Update the WooCommerce Order with fields from its ERPNext Sales Order."""
 		wc_order_dirty = False
 
-		sales_order_wc_status = (
-			WC_ORDER_STATUS_MAPPING.get(sales_order.woocommerce_status)
-			if sales_order.woocommerce_status
-			else None
+		# Determine the WooCommerce API status slug to push.
+		# When enable_so_status_sync is ON, the SO's woocommerce_status already
+		# contains the WC API slug (e.g. "processing") set via the user-defined
+		# status map in on_change(). Use it directly.
+		# When OFF, fall back to the hardcoded WC_ORDER_STATUS_MAPPING.
+		wc_server = frappe.get_cached_doc(
+			"WooCommerce Server", resolve_wc_server_name(wc_order.woocommerce_server)
 		)
+		if getattr(wc_server, "enable_so_status_sync", False) and sales_order.woocommerce_status:
+			# woocommerce_status is already the WC API slug (e.g. "processing")
+			sales_order_wc_status = sales_order.woocommerce_status
+		else:
+			sales_order_wc_status = (
+				WC_ORDER_STATUS_MAPPING.get(sales_order.woocommerce_status)
+				if sales_order.woocommerce_status
+				else None
+			)
 		if sales_order_wc_status and sales_order_wc_status != wc_order.status:
 			wc_order.status = sales_order_wc_status
 			wc_order_dirty = True
 
 		# Update line items if enabled
-		wc_server = frappe.get_cached_doc("WooCommerce Server", resolve_wc_server_name(wc_order.woocommerce_server))
 		if getattr(wc_server, "sync_so_items_to_wc", False):
 			# Get WooCommerce IDs for items
 			raw_domain = wc_order.woocommerce_server

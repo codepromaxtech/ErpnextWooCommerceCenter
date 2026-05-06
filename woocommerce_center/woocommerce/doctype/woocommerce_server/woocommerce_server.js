@@ -336,6 +336,36 @@ frappe.ui.form.on("WooCommerce Server", {
             console.warn("WC Center: warehouses query setup failed", e);
         }
     },
+
+    enable_so_status_sync: function (frm) {
+        // Auto-populate default status mappings when toggled on and table is empty
+        if (
+            frm.doc.enable_so_status_sync &&
+            (!frm.doc.sales_order_status_map ||
+                frm.doc.sales_order_status_map.length === 0)
+        ) {
+            const defaults = [
+                { erpnext_sales_order_status: "Draft", woocommerce_sales_order_status: "checkout-draft" },
+                { erpnext_sales_order_status: "On Hold", woocommerce_sales_order_status: "on-hold" },
+                { erpnext_sales_order_status: "To Deliver and Bill", woocommerce_sales_order_status: "processing" },
+                { erpnext_sales_order_status: "To Bill", woocommerce_sales_order_status: "processing" },
+                { erpnext_sales_order_status: "To Deliver", woocommerce_sales_order_status: "processing" },
+                { erpnext_sales_order_status: "Completed", woocommerce_sales_order_status: "completed" },
+                { erpnext_sales_order_status: "Cancelled", woocommerce_sales_order_status: "cancelled" },
+                { erpnext_sales_order_status: "Closed", woocommerce_sales_order_status: "completed" },
+            ];
+            defaults.forEach(function (d) {
+                let row = frm.add_child("sales_order_status_map");
+                row.erpnext_sales_order_status = d.erpnext_sales_order_status;
+                row.woocommerce_sales_order_status = d.woocommerce_sales_order_status;
+            });
+            frm.refresh_field("sales_order_status_map");
+            frappe.show_alert({
+                message: __("Default status mappings added. Review and save."),
+                indicator: "blue",
+            });
+        }
+    },
 });
 
 function render_webhook_delivery_urls(frm) {

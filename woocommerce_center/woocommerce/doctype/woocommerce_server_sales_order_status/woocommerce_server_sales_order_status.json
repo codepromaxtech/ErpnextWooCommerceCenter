@@ -16,15 +16,16 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "ERPNext Sales Order Status",
-   "options": "\\nDraft\\nOn Hold\\nTo Deliver and Bill\\nTo Bill\\nTo Deliver\\nCompleted\\nCancelled\\nClosed"
+   "options": "\nDraft\nOn Hold\nTo Deliver and Bill\nTo Bill\nTo Deliver\nCompleted\nCancelled\nClosed"
   },
   {
    "columns": 5,
-   "description": "Must match a WooCommerce order status exactly (e.g. 'processing', 'completed', 'on-hold')",
+   "description": "WooCommerce order status slug to map to",
    "fieldname": "woocommerce_sales_order_status",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "WooCommerce Sales Order Status"
+   "label": "WooCommerce Sales Order Status",
+   "options": "\npending\non-hold\nprocessing\ncompleted\ncancelled\nrefunded\nfailed\ntrash\ncheckout-draft"
   }
  ],
  "grid_page_length": 50,
